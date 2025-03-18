@@ -5,3 +5,4 @@ A fastapi websocket server that will show a leaderboard of top users performing 
 # Tools
 - FastAPI
 - Redis
+- UV for project management
