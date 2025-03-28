@@ -4,7 +4,6 @@ from fastapi import APIRouter, FastAPI
 
 from app.core.config import AppSettings, PostgresSettings
 from app.core.db.database import engine, Base
-from app.core.db.models import *
 
 async def create_tables() -> None:
     try:
@@ -33,7 +32,8 @@ def applifespan_factory(
     return lifespan
      
 def create_application(
-    router: APIRouter,
+    api_router: APIRouter,
+    ws_router: APIRouter,
     settings: AppSettings,
     create_tables_on_start: bool = True,
     **kwargs: Any,
@@ -42,6 +42,7 @@ def create_application(
     
     application = FastAPI(lifespan=lifespan, **kwargs)
     
-    application.include_router(router)
+    application.include_router(api_router)
+    application.include_router(ws_router)
     
     return application
