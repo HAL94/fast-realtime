@@ -4,6 +4,7 @@ from fastapi import APIRouter, FastAPI
 
 from app.core.config import AppSettings, PostgresSettings
 from app.core.db.database import engine, Base
+import app.core.db.models # noqa
 
 async def create_tables() -> None:
     try:

@@ -1,15 +1,35 @@
 
 import logging
 from typing import AsyncGenerator
+from sqlalchemy import DateTime, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.exc import SQLAlchemyError
-
+from datetime import datetime
 from app.core.config import AppSettings
 
 
 class Base(DeclarativeBase):
-    pass
+    id: Mapped[int] = mapped_column(
+        "id", autoincrement=True, nullable=False, unique=True, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now())
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(), onupdate=datetime.now)
+
+    def dict(self):
+        """Returns a dict representation of a model."""
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    @classmethod
+    def columns(cls):
+        """Returns a set of column names for this model."""
+        return {_column.name for _column in inspect(cls).c}
+
+    @classmethod
+    def table(cls):
+        """Returns the table object for this model."""
+        return cls.__table__
 
 
 settings = AppSettings()

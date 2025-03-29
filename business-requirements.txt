@@ -1,0 +1,31 @@
+Real-time Leaderboard
+
+Project Requirements
+
+You are to build an imaginary real-time leaderboard system that ranks users based on their scores in various games or activities. The system should meet the following requirements:
+
+   1- User Authentication: Users should be able to register and log in to the system.
+   2- Score Submission: Users should be able to submit their scores for different games or activities.
+   3- Leaderboard Updates: Display a global leaderboard showing the top users across all games.
+   4- User Rankings: Users should be able to view their rankings on the leaderboard.
+   5- Top Players Report: Generate reports on the top players for a specific period.
+
+Sorted Sets
+
+Leaderboard Storage: Use Redis sorted sets to store and manage leaderboards.
+Real-Time Updates: Utilize Redis sorted sets for efficient real-time updates and queries.
+Rank Queries: Use Redis commands to query user ranks and leaderboard positions.
+
+TODOS:
+1. Authentication
+    - User auth.
+    - Protect ws and api endpoints with jwt.
+
+2. Score Submission:
+    - Enable ws scores endpoint to perform data entry.
+
+3. Leaderboard: 
+    - Retrive all scores from scores endpoint:
+        - by all games (all channels)
+        - by specific game (specific channel)
+    - Paginate with pageSize and pageNumber
