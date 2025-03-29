@@ -33,7 +33,7 @@ class ForbiddenException(HTTPException):
 
     def __init__(self, detail: str = "Access forbidden"):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=AppResponse(
-            success=False, status_code=409, message=detail).__dict__)
+            success=False, status_code=403, message=detail).__dict__)
 
 
 class ServerFailException(HTTPException):

@@ -8,7 +8,6 @@ app = create_application(
     api_router=api_router, ws_router=ws_router, settings=AppSettings()
 )
 
-
 leaderboard = []
 @app.post("/")
 async def generate_leaderboard():
