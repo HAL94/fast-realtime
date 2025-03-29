@@ -12,7 +12,7 @@ class PostgresSettings(BaseSettings):
 class JwtSettings(BaseSettings):
     SECRET_KEY: str = "a5f1e06590c961d334e7a8e632712d984439fc43bad6ccdb977446579bd82e4a"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 
 
 class AppSettings(PostgresSettings, JwtSettings):

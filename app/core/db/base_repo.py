@@ -206,10 +206,8 @@ class BaseRepo(Generic[DbModel, PydanticModel]):
             return_model: An optional BaseModel or PydanticModel to use for returning the result. Defaults to the repository's model.
 
         Returns:
-            A PydanticModel instance representing the found record.
-
-        Raises:
-            NotFoundException: If no matching record is found.
+            A PydanticModel instance representing the found record. Or None if not found
+            
         """
         session = self.session
 
@@ -224,7 +222,7 @@ class BaseRepo(Generic[DbModel, PydanticModel]):
         result = await session.scalar(select(self._dbmodel).where(*where_cond))
 
         if result is None:
-            raise NotFoundException
+            return None
 
         return_model = return_model or self._model
 

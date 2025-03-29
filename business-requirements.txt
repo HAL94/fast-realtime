@@ -18,8 +18,9 @@ Rank Queries: Use Redis commands to query user ranks and leaderboard positions.
 
 TODOS:
 1. Authentication
-    - User auth.
-    - Protect ws and api endpoints with jwt.
+    - User auth. [x]
+    - Protect api endpoints with jwt. [x]
+    - Protect ws ednpoints with jwt
 
 2. Score Submission:
     - Enable ws scores endpoint to perform data entry.
