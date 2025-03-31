@@ -7,9 +7,11 @@ from app.api import router as api_router
 from app.websocket import router as ws_router
 from app.utils.leaderboard import generate_leaderboard_data
 
+
 app = create_application(
     api_router=api_router, ws_router=ws_router, settings=AppSettings()
 )
+
 
 leaderboard = []
 @app.post("/")

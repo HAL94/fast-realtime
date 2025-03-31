@@ -1,10 +1,8 @@
 from typing import Any, AsyncGenerator, Callable
 from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from fastapi import APIRouter, FastAPI
-
 from app.core.config import AppSettings, PostgresSettings
 from app.core.db.database import engine, Base
-import app.core.db.models # noqa
 
 async def create_tables() -> None:
     try:
@@ -44,6 +42,22 @@ def create_application(
     application = FastAPI(lifespan=lifespan, **kwargs)
     
     application.include_router(api_router)
+    
+    # async def websocket_auth_middleware(scope, receive, send):
+    #     # print(f"scope: {scope.get("path")}")
+    #     if scope["type"] == "websocket":
+    #         print("WebSocket connection received.")
+    #         print(application.router.routes)
+    #         for route in application.routes:
+    #             if route.path == scope["path"]:
+    #                 await route.endpoint(StarletteWebSocket(scope, receive, send))
+    #                 return
+    #         # await application.router.routes[2].endpoint(StarletteWebSocket(scope, receive, send)) #Routes[2] is the websocket route.            
+    #         # return
+
+    #     await application(scope, receive, send)
+
+    # application.add_middleware(lambda app: lambda scope, receive, send: websocket_auth_middleware(scope, receive, send))
     application.include_router(ws_router)
     
     return application
