@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.core.auth.schema import UserData, UserSigninRequest, UserSignupRequest, UserSignupResponse
+from app.core.auth.schema import UserData, UserRead, UserSigninRequest, UserSignupRequest, UserSignupResponse
 from app.core.auth.http import validate_http_jwt
 from app.api.v1.auth.service import AuthService, get_auth_service
 from app.core.common.app_response import AppResponse
@@ -15,8 +15,8 @@ async def login(payload: UserSigninRequest, auth_service: AuthService = Depends(
     data = await auth_service.login_user(payload)    
     return AppResponse(data=data)
 
-@router.get("/me", response_model=AppResponse[UserData])
-async def get_user(user_data: UserData = Depends(validate_http_jwt)):
+@router.get("/me", response_model=AppResponse[UserRead])
+async def get_user(user_data: UserRead = Depends(validate_http_jwt)):
     try:
         return AppResponse(data=user_data)
     except InvalidTokenError as e:
