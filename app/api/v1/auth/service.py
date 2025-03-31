@@ -1,14 +1,11 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
 from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 
-from app.api.v1.auth.repository import UserRepository, get_user_repo
-from app.api.v1.auth.schema import (
+from app.core.auth.repository import UserRepository, get_user_repo
+from app.core.auth.schema import (
     AccessToken,
     JwtData,
-    UserData,
     UserRead,
     UserReadWithPw,
     UserSigninRequest,
@@ -19,50 +16,11 @@ from app.api.v1.auth.schema import (
 from app.core.config import AppSettings, get_settings
 from app.core.exceptions import (
     AlreadyExistsException,
-    ForbiddenException,
     UnauthorizedException,
 )
+
 from passlib.context import CryptContext
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
-
-class JwtBearer:        
-    async def __call__(
-        self,
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-        user_repo: UserRepository = Depends(get_user_repo), 
-        settings: AppSettings = Depends(get_settings),
-    ):
-        if not credentials:
-            raise ForbiddenException("Could not find authorization header")
-
-        if credentials.scheme != "Bearer":
-            raise ForbiddenException("Invalid authorization scheme")
-
-        token: AccessToken = credentials.credentials
-        self.user_repo = user_repo
-        self.settings = settings
-        
-        user_info = await self.get_current_user(token)
-
-        return UserData(token=token, user=user_info)
-
-    async def get_current_user(self, token: str) -> UserRead:
-        payload = jwt.decode(
-            token, self.settings.SECRET_KEY, algorithms=[self.settings.ALGORITHM]
-        )        
-        user_id = payload.get("id")
-        if not user_id:
-            raise UnauthorizedException
-
-        user_found: UserRead = await self.user_repo.get_one(val=user_id, field="id")
-        
-        if not user_found:
-            raise UnauthorizedException
-        
-        return user_found
-
 
 def get_auth_service(
     user_repo: UserRepository = Depends(get_user_repo),
