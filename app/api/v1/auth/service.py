@@ -5,7 +5,6 @@ import jwt
 from app.core.auth.repository import UserRepository, get_user_repo
 from app.core.auth.schema import (
     AccessToken,
-    JwtData,
     UserRead,
     UserReadWithPw,
     UserSigninRequest,
@@ -86,7 +85,7 @@ class AuthService:
         if not password_match:
             raise UnauthorizedException(detail="Invalid credentials")
 
-        jwt_data = JwtData(
+        jwt_data = UserRead(
             id=user_data.id, name=user_data.name, email=user_data.email
         ).model_dump()
 

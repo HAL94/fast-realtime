@@ -39,8 +39,4 @@ class UserSigninRequest(BaseModel):
 
 class UserSigninResponse(UserData):
     pass
-
-
-class JwtData(UserRead):
-    pass
     
