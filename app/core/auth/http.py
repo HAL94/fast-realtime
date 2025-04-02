@@ -1,20 +1,24 @@
 from fastapi import Depends
 
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import APIKeyCookie, HTTPBearer
 from app.core.auth.base import BaseJwtAuth
 from app.core.auth.repository import UserRepository, get_user_repo
 from app.core.auth.schema import AccessToken
 from app.core.config import AppSettings, get_settings
-from app.core.exceptions import ForbiddenException, UnauthorizedException
+from app.core.exceptions import UnauthorizedException
+from app.core.logger import logger
 
 security = HTTPBearer()
+cookie = APIKeyCookie(name='ath')
 
 
 async def validate_http_jwt(
     user_repo: UserRepository = Depends(get_user_repo),
     settings: AppSettings = Depends(get_settings),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: str = Depends(cookie),
 ):
+    print("reached validate_http_jwt")
+    logger.debug("reached validate_http_jwt")
     jwt_auth = HttpJwtAuth(
         user_repo=user_repo, settings=settings, credentials=credentials
     )
@@ -26,19 +30,18 @@ class HttpJwtAuth(BaseJwtAuth):
         self,
         user_repo: UserRepository,
         settings: AppSettings,
-        credentials: HTTPAuthorizationCredentials,
+        credentials: str,
     ):
+        print("reached validate_http_jwt")
         super().__init__(user_repo=user_repo, settings=settings)
         self.credentials = credentials
 
     async def validate_http_token(self):
         if not self.credentials:
-            raise ForbiddenException("Could not find authorization header")
+            logger.info("no creds")
+            raise UnauthorizedException("Could not find authorization header")
 
-        if self.credentials.scheme != "Bearer":
-            raise ForbiddenException("Invalid authorization scheme")
-
-        token: AccessToken = self.credentials.credentials
+        token: AccessToken = self.credentials
 
         user_info = await self._validate_token(token)
 

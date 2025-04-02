@@ -16,5 +16,13 @@ class AppResponse(BaseModel, Generic[T]):
         alias_generator=AliasGenerator(to_camel),
         populate_by_name=True,
     )
+
+    def __dict__(self):
+        return {
+            "success": self.success,
+            "statusCode": self.status_code,
+            "message": self.message,
+            "data": self.data
+        }
     
         

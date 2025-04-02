@@ -15,7 +15,7 @@ from app.core.auth.schema import (
 from app.core.config import AppSettings, get_settings
 from app.core.exceptions import (
     AlreadyExistsException,
-    UnauthorizedException,
+    ForbiddenException,
 )
 
 from passlib.context import CryptContext
@@ -76,14 +76,14 @@ class AuthService:
         )
 
         if not user_data:
-            raise UnauthorizedException(detail="Invalid credentials")
+            raise ForbiddenException(detail="Invalid credentials")
 
         password_match = self._verify_password(
             plain_password=payload.password, hashed_password=user_data.password
         )
 
         if not password_match:
-            raise UnauthorizedException(detail="Invalid credentials")
+            raise ForbiddenException(detail="Invalid credentials")
 
         jwt_data = UserRead(
             id=user_data.id, name=user_data.name, email=user_data.email
