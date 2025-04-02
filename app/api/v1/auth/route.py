@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.core.auth.schema import (
-    UserData,
     UserRead,
     UserSigninRequest,
     UserSignupRequest,
@@ -40,6 +39,12 @@ async def get_user(user_data: UserRead = Depends(validate_http_jwt)):
     except UnauthorizedException as e:
         raise e
 
+@router.post("/signout")
+async def signout_user(response: Response):
+    response.delete_cookie('ath')
+    
+    return AppResponse(data=None, message="You logged out successfully")
+    
 
 @router.post("/signup", response_model=AppResponse[UserSignupResponse])
 async def signup_user(
