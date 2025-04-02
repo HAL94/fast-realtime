@@ -3,6 +3,8 @@ from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from app.core.config import AppSettings, PostgresSettings
 from app.core.db.database import engine, Base
+from fastapi.middleware.cors import CORSMiddleware
+
 
 async def create_tables() -> None:
     try:
@@ -15,49 +17,42 @@ async def create_tables() -> None:
 
 
 def applifespan_factory(
-    settings: AppSettings,
-    create_tables_on_start: bool = True
+    settings: AppSettings, create_tables_on_start: bool = True
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
-
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator:
         if isinstance(settings, PostgresSettings) and create_tables_on_start:
             await create_tables()
-        
+
         yield
-        
+
         await engine.dispose()
-    
+
     return lifespan
-     
+
+
 def create_application(
     api_router: APIRouter,
     ws_router: APIRouter,
     settings: AppSettings,
     create_tables_on_start: bool = True,
     **kwargs: Any,
-) -> FastAPI:   
-    lifespan = applifespan_factory(settings, create_tables_on_start=create_tables_on_start)
-    
+) -> FastAPI:
+    lifespan = applifespan_factory(
+        settings, create_tables_on_start=create_tables_on_start
+    )
+
     application = FastAPI(lifespan=lifespan, **kwargs)
-    
+
     application.include_router(api_router)
-    
-    # async def websocket_auth_middleware(scope, receive, send):
-    #     # print(f"scope: {scope.get("path")}")
-    #     if scope["type"] == "websocket":
-    #         print("WebSocket connection received.")
-    #         print(application.router.routes)
-    #         for route in application.routes:
-    #             if route.path == scope["path"]:
-    #                 await route.endpoint(StarletteWebSocket(scope, receive, send))
-    #                 return
-    #         # await application.router.routes[2].endpoint(StarletteWebSocket(scope, receive, send)) #Routes[2] is the websocket route.            
-    #         # return
-
-    #     await application(scope, receive, send)
-
-    # application.add_middleware(lambda app: lambda scope, receive, send: websocket_auth_middleware(scope, receive, send))
     application.include_router(ws_router)
-    
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+    )
+
     return application

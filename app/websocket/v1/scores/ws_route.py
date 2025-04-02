@@ -43,8 +43,6 @@ async def websocket_user1_score(
     if not user_data:
         # gracefylly exit endpoint
         return
-    
-    print(f"token is: {user_data.token}")
 
     try:
         data = await redis.zrange(scores_sorted_set, 0, -1, withscores=True)
