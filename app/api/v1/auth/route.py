@@ -25,7 +25,6 @@ async def login(
     return AppResponse(data=data)
 
 
-# user_data: UserRead = Depends(validate_http_jwt)
 @router.get("/me", response_model=AppResponse[UserRead])
 async def get_user(user_data: UserRead = Depends(validate_http_jwt)):
     try:
