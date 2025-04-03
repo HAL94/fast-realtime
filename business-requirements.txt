@@ -20,7 +20,10 @@ TODOS:
 1. Authentication
     - User auth. [x]
     - Protect api endpoints with jwt. [x]
-    - Protect ws ednpoints with jwt
+    - Protect ws ednpoints with jwt [x]
+        - protect getting all scores [x]
+        - protect score submission []
+    - Integrate frontend [x]
 
 2. Score Submission:
     - Enable ws scores endpoint to perform data entry.

@@ -2,10 +2,13 @@ from sqlalchemy import String
 from app.core.db.database import Base
 from sqlalchemy.orm import Mapped, mapped_column
 
+
 class User(Base):
-    __tablename__ = 'users'
-    
+    __tablename__ = "users"
+
     name: Mapped[str] = mapped_column(String(256))
     email: Mapped[str] = mapped_column(String(256), unique=True)
     password: Mapped[str] = mapped_column(String(256))
 
+    def __repr__(self):
+        return f"Id:{self.id},Name:{self.name}"
