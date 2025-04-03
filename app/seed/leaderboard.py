@@ -1,26 +1,28 @@
 import random
 from datetime import datetime, timedelta
 
-def generate_leaderboard_data(num_entries=10):
+from app.core.db.models import User
+
+def generate_leaderboard_data(players: list[User]):
     """Generates random leaderboard data."""
 
-    games = ["Call of Duty", "Valorant", "Minecraft", "Fortnite", "Apex Legends", "League of Legends", "Overwatch", "Counter-Strike", "Rocket League", "PUBG"]
-    players = [f"Player_{i}" for i in range(1, 101)] # Generate 100 player names
+    games = ["Call of Duty", "Valorant", "Minecraft", "Fortnite", "Apex Legends", "League of Legends", "Overwatch", "Counter-Strike", "Rocket League", "PUBG"]    
     leaderboard = []
 
-    for rank in range(1, num_entries + 1):
-        player = random.choice(players)
+    for rank, player in enumerate(players):
         game = random.choice(games)
         score = random.randint(100, 1000)
         date = (datetime.now() - timedelta(days=random.randint(0, 30))).strftime('%Y-%m-%d') # Random dates within the last 30 days.
 
         entry = {
             "rank": rank,
-            "player": player,
+            "id": player.id,
+            "player": player.name,
             "game": game,
             "score": score,
             "date": date
         }
+        
         leaderboard.append(entry)
 
     return leaderboard
