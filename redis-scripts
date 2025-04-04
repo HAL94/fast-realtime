@@ -1,0 +1,3 @@
+redis-cli EVAL "local cursor = '0' local keys = {} repeat local result = redis.call('SCAN', cursor) cursor = result[1] for _, key in ipairs(result[2]) do if redis.call('TYPE', key).ok == 'zset' then table.insert(keys, key) end end until cursor == '0' return keys" 0
+
+-- get all sorted sets available

@@ -1,3 +1,4 @@
+from app.redis.channels import COD, FORTNITE
 from app.seed.utils import clear_db, create_session_local, get_db
 from .pg_seed import UserSeeder
 from .redis_seed import ScoresSeeder
@@ -13,8 +14,11 @@ def seed_everything():
     user_data = user_seeder.seed(num_entries=entries, db=db)
 
     # dependend on previous seeder
-    scores_seeder = ScoresSeeder(data=user_data)
-    scores_seeder.seed()
+    cod_scores_seeder = ScoresSeeder(data=user_data, channel=COD)
+    cod_scores_seeder.seed()
+    
+    fortnite_scores_seeder = ScoresSeeder(data=user_data, channel=FORTNITE)
+    fortnite_scores_seeder.seed()
 
 
 if __name__ == "__main__":

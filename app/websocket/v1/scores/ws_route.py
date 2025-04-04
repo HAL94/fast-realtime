@@ -46,7 +46,7 @@ async def websocket_user1_score(
         return
 
     try:
-        result = await score_service.get_leaderboard_data()
+        result = await score_service.get_all_leaderboard_data()
         await websocket.send_json({"result": result})
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
