@@ -34,20 +34,25 @@ async def websocket_endpoint(
         await websocket.send_text(f"Message text was: {data}")
 
 
-@router.websocket("/u1")
+@router.websocket("/scores")
 async def websocket_user1_score(
     websocket: WebSocket,
     redis: AsyncRedis.Redis = Depends(get_redis_client),
     user_data: UserRead | None = Depends(validate_ws_jwt),
-):    
+):
     if not user_data:
         # gracefylly exit endpoint
         return
 
     try:
-        data = await redis.zrange(scores_sorted_set, 0, -1, withscores=True)
-        await websocket.send_json({"result": [t[1] for t in data]})
+        data = await redis.zrevrange(scores_sorted_set, 0, -1, withscores=True)
+        result = []
+        for item in data:
+            id, _ = item
+            user_dict = await redis.hgetall(name=id.decode())
+            user_info = {k.decode(): v.decode() for k, v in user_dict.items()}
+            result.append(user_info)
+
+        await websocket.send_json({"result": result})
     except AsyncRedis.ConnectionError as e:
         print(f"Redis connection error: {e}")
-        
-   

@@ -15,7 +15,7 @@ def generate_leaderboard_data(players: list[User]):
         date = (datetime.now() - timedelta(days=random.randint(0, 30))).strftime('%Y-%m-%d') # Random dates within the last 30 days.
 
         entry = {
-            "rank": rank,
+            "rank": rank + 1,
             "id": player.id,
             "player": player.name,
             "game": game,

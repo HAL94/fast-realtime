@@ -13,7 +13,7 @@ def get_ws_token(websocket: WebSocket):
     cookie.load(websocket.headers.get("cookie"))
     cookies = {key: value.value or None for key, value in cookie.items()}
 
-    token: AccessToken = cookies.get("token")
+    token: AccessToken = cookies.get("ath")
     return token or None
 
 
@@ -23,7 +23,7 @@ async def validate_ws_jwt(
     user_repo: UserRepository = Depends(get_user_repo),
     settings: AppSettings = Depends(get_settings),
 ):
-    jwt_auth = WsJwtAuth(user_repo=user_repo, settings=settings)
+    jwt_auth = WsJwtAuth(user_repo=user_repo, settings=settings)    
     return await jwt_auth.validate_ws_token(websocket=websocket, token=token)
 
 
