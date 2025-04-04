@@ -1,18 +1,47 @@
 import redis
 from app.core.db.models import User
-from app.redis.channels import SCORES_CHANNEL
+from app.redis.channels import ALL_GAMES
 from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
 from .utils import generate_leaderboard_data
 
+final_encoding = ""
+
+
+def update_merged_scores(player_id: str, game: str, score: int, client: redis.Redis):
+    key = f"{ALL_GAMES}:{player_id}:{game}"
+
+    client.zadd(ALL_GAMES, mapping={key: score})
+    # merged_mappings = client.hgetall(name=key)
+
+    # print(merged_mappings)
+
+    # encoding = []
+
+    # if "merged" not in merged_mappings:
+    #     merged_mappings["merged"] = ""
+    # else:
+    #     encoding = merged_mappings["merged"].split(",")
+
+    # entry = f"{game}:{score}"
+
+    # if entry not in encoding:
+    #     encoding.append(entry)
+
+    # final_encoding = ",".join(encoding)
+
+    # print(f"final encoding: {final_encoding}")
+
+    # client.hset(name=key, mapping={"merged": final_encoding})
+
 
 class ScoresSeeder(SeederBase):
     name = "Score Seeder"
-    channel = SCORES_CHANNEL
 
-    def __init__(self, data):
+    def __init__(self, data, channel):
         super().__init__(data=data)
         self.client = create_redis_client()
+        self.channel = channel
         self._transformed = self._transform(data)
         self._scores = [
             (entry.get("score"), entry.get("id")) for entry in self._transformed
@@ -23,13 +52,21 @@ class ScoresSeeder(SeederBase):
             redis_client=self.client,
             sorted_set_name=self.channel,
         )
-        leaderboard_data = generate_leaderboard_data(data)
+        leaderboard_data = generate_leaderboard_data(data, self.channel)
         return leaderboard_data
 
     def seed(self):
-        for (id, score), player_info in zip(self._scores, self._transformed):
-            self.client.zadd(self.channel, {score: id})
-            self.client.hset(name=f"{player_info.get('id')}", mapping=player_info)
+        for (score, id), player_info in zip(self._scores, self._transformed):
+            self.client.zadd(self.channel, {id: score})
+            self.client.hset(
+                name=f"{player_info.get('id')}:{self.channel}", mapping=player_info
+            )
+            # update_merged_scores(
+            #     player_id=id, game=self.channel, score=score, client=self.client
+            # )
+            
+            key = f"{ALL_GAMES}:{id}:{self.channel}"
+            self.client.zadd(ALL_GAMES, mapping={key: score})
 
 
 def clear_and_recreate_sortedset(redis_client: redis.Redis, sorted_set_name: str):
@@ -75,7 +112,7 @@ def main():
         redis_client.ping()  # Check if the connection is successful
         print("Redis connection successful.")
 
-        clear_and_recreate_sortedset(redis_client, SCORES_CHANNEL)
+        clear_and_recreate_sortedset(redis_client, ALL_GAMES)
 
     except redis.exceptions.ConnectionError as e:
         print(f"Failed to connect to Redis: {e}")

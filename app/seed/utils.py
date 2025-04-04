@@ -14,25 +14,13 @@ URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
 engine = create_engine(url=URL)
 
 
-def generate_leaderboard_data(players: list[User]):
+def generate_leaderboard_data(players: list[User], game_channel: str):
     """Generates random leaderboard data."""
-
-    games = [
-        "Call of Duty",
-        "Valorant",
-        "Minecraft",
-        "Fortnite",
-        "Apex Legends",
-        "League of Legends",
-        "Overwatch",
-        "Counter-Strike",
-        "Rocket League",
-        "PUBG",
-    ]
+   
     leaderboard = []
 
     for rank, player in enumerate(players):
-        game = random.choice(games)
+        game = game_channel
         score = random.randint(100, 1000)
         date = (datetime.now() - timedelta(days=random.randint(0, 30))).strftime(
             "%Y-%m-%d"
