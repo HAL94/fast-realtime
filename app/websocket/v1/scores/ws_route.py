@@ -11,10 +11,11 @@ from app.redis.client import get_redis_client
 
 import logging
 
+from app.websocket.v1.scores.service import ScoreService, get_score_service
+
 logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
-scores_sorted_set = "scores"
 
 
 @router.websocket("/")
@@ -37,7 +38,7 @@ async def websocket_endpoint(
 @router.websocket("/scores")
 async def websocket_user1_score(
     websocket: WebSocket,
-    redis: AsyncRedis.Redis = Depends(get_redis_client),
+    score_service: ScoreService = Depends(get_score_service),
     user_data: UserRead | None = Depends(validate_ws_jwt),
 ):
     if not user_data:
@@ -45,14 +46,12 @@ async def websocket_user1_score(
         return
 
     try:
-        data = await redis.zrevrange(scores_sorted_set, 0, -1, withscores=True)
-        result = []
-        for item in data:
-            id, _ = item
-            user_dict = await redis.hgetall(name=id.decode())
-            user_info = {k.decode(): v.decode() for k, v in user_dict.items()}
-            result.append(user_info)
-
+        result = await score_service.get_leaderboard_data()
         await websocket.send_json({"result": result})
     except AsyncRedis.ConnectionError as e:
-        print(f"Redis connection error: {e}")
+        logger.error(f"Redis connection error: {e}")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
+        logger.info("Websocket connection closed.")

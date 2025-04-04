@@ -1,8 +1,11 @@
+import random
 import redis
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 from app.core.config import AppSettings
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.db.database import Base
+from app.core.db.models import User
 
 settings = AppSettings()
 URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
@@ -10,6 +13,30 @@ URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
 }/{settings.PG_DB}"
 engine = create_engine(url=URL)
 
+
+def generate_leaderboard_data(players: list[User]):
+    """Generates random leaderboard data."""
+
+    games = ["Call of Duty", "Valorant", "Minecraft", "Fortnite", "Apex Legends", "League of Legends", "Overwatch", "Counter-Strike", "Rocket League", "PUBG"]    
+    leaderboard = []
+
+    for rank, player in enumerate(players):
+        game = random.choice(games)
+        score = random.randint(100, 1000)
+        date = (datetime.now() - timedelta(days=random.randint(0, 30))).strftime('%Y-%m-%d') # Random dates within the last 30 days.
+
+        entry = {
+            "rank": rank + 1,
+            "id": player.id,
+            "player": player.name,
+            "game": game,
+            "score": score,
+            "date": date
+        }
+        
+        leaderboard.append(entry)
+
+    return leaderboard
 def create_session_local():    
     Base.metadata.create_all(bind=engine)  # Create the table if it doesnt exist
     return sessionmaker(bind=engine)

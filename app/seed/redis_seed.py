@@ -2,7 +2,7 @@ import redis
 from app.core.db.models import User
 from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
-from .leaderboard import generate_leaderboard_data
+from .utils import generate_leaderboard_data
 
 
 class ScoresSeeder(SeederBase):
