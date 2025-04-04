@@ -1,19 +1,31 @@
 import redis
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from app.core.config import AppSettings
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.db.database import Base
 
+settings = AppSettings()
+URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
+    settings.PG_PORT
+}/{settings.PG_DB}"
+engine = create_engine(url=URL)
+
 def create_session_local():    
-    settings = AppSettings()
-    URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
-        settings.PG_PORT
-    }/{settings.PG_DB}"
-    engine = create_engine(url=URL)
     Base.metadata.create_all(bind=engine)  # Create the table if it doesnt exist
     return sessionmaker(bind=engine)
 
-        
+def clear_db():
+    engine = create_engine(url=URL)
+    SessionLocal = sessionmaker(bind=engine)
+    
+    db: Session = next(get_db(SessionLocal=SessionLocal))
+
+    db.execute(text("DROP SCHEMA public CASCADE"))
+    db.execute(text("CREATE SCHEMA public"))
+
+    db.commit()
+    Base.metadata.create_all(bind=engine)
+    
 def get_db(SessionLocal: sessionmaker[Session]):
     db = SessionLocal()
     try:

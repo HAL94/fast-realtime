@@ -18,7 +18,7 @@ class UserSeeder(SeederBase):
     def _create_hashed_pw(self, password: str):
         return self.pwd_context.hash(password)
 
-    def transform(self, _data):
+    def _transform(self, _data):
         pass
 
     def seed(self, num_entries, db: Session):

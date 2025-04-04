@@ -12,14 +12,15 @@ class ScoresSeeder(SeederBase):
     def __init__(self, data):
         super().__init__(data=data)
         self.client = create_redis_client()
-        self.data = self.transform(data)
+        self.data = self._transform(data)
 
-    def transform(self, data):
+    def _transform(self, data):
         leaderboard_data = clear_and_recreate_scores(
             players=data,
             redis_client=self.client,
             sorted_set_name=self.channel,
         )
+        self._transformed = leaderboard_data        
         transform_leaderboard_data = [
             (entry.get("score"), entry.get("id")) for entry in leaderboard_data
         ]
@@ -27,8 +28,9 @@ class ScoresSeeder(SeederBase):
         return transform_leaderboard_data
 
     def seed(self):
-        for id, score in self.data:
+        for (id, score), player_info in zip(self.data, self._transformed):
             self.client.zadd(self.channel, {score: id})
+            self.client.hset(name=f"{player_info.get("id")}", mapping=player_info)
 
 
 def clear_and_recreate_scores(players: list[User], redis_client, sorted_set_name):

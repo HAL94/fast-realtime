@@ -1,9 +1,10 @@
-from app.seed.utils import create_session_local, get_db
+from app.seed.utils import clear_db, create_session_local, get_db
 from .pg_seed import UserSeeder
 from .redis_seed import ScoresSeeder
 
 
 def seed_everything():
+    clear_db()
     SessionLocal = create_session_local()
     db = next(get_db(SessionLocal=SessionLocal))
     user_seeder = UserSeeder()
