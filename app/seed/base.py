@@ -12,7 +12,7 @@ class SeederBase(ABC):
         self.data = data
     
     @abstractmethod
-    def _transform(self, data, *args, **kwargs):
+    def _transform(self, data: Any, *args, **kwargs):
         pass
 
     @abstractmethod
