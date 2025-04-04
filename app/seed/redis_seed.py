@@ -1,5 +1,6 @@
 import redis
 from app.core.db.models import User
+from app.redis.channels import SCORES_CHANNEL
 from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
 from .utils import generate_leaderboard_data
@@ -7,33 +8,31 @@ from .utils import generate_leaderboard_data
 
 class ScoresSeeder(SeederBase):
     name = "Score Seeder"
-    channel = "scores"
+    channel = SCORES_CHANNEL
 
     def __init__(self, data):
         super().__init__(data=data)
         self.client = create_redis_client()
-        self.data = self._transform(data)
+        self._transformed = self._transform(data)
+        self._scores = [
+            (entry.get("score"), entry.get("id")) for entry in self._transformed
+        ]
 
-    def _transform(self, data):
-        leaderboard_data = clear_and_recreate_scores(
-            players=data,
+    def _transform(self, data: list[User]):
+        clear_and_recreate_sortedset(
             redis_client=self.client,
             sorted_set_name=self.channel,
         )
-        self._transformed = leaderboard_data        
-        transform_leaderboard_data = [
-            (entry.get("score"), entry.get("id")) for entry in leaderboard_data
-        ]
-        print(f"redis data: {transform_leaderboard_data}")
-        return transform_leaderboard_data
+        leaderboard_data = generate_leaderboard_data(data)
+        return leaderboard_data
 
     def seed(self):
-        for (id, score), player_info in zip(self.data, self._transformed):
+        for (id, score), player_info in zip(self._scores, self._transformed):
             self.client.zadd(self.channel, {score: id})
-            self.client.hset(name=f"{player_info.get("id")}", mapping=player_info)
+            self.client.hset(name=f"{player_info.get('id')}", mapping=player_info)
 
 
-def clear_and_recreate_scores(players: list[User], redis_client, sorted_set_name):
+def clear_and_recreate_sortedset(redis_client: redis.Redis, sorted_set_name: str):
     """
     Clears an existing Redis sorted set and recreates it.
 
@@ -54,12 +53,6 @@ def clear_and_recreate_scores(players: list[User], redis_client, sorted_set_name
         # You can add initial values here if needed.
         # For an empty set, you don't need to add anything.
         print(f"Sorted set '{sorted_set_name}' recreated.")
-
-        leaderboard = generate_leaderboard_data(players)
-
-        print(f"successfully got a sample leaderboard: {leaderboard}")
-
-        return leaderboard
 
     except redis.exceptions.RedisError as e:
         print(f"Redis error: {e}")
@@ -82,8 +75,7 @@ def main():
         redis_client.ping()  # Check if the connection is successful
         print("Redis connection successful.")
 
-        sorted_set_name = "scores"  # Replace with your sorted set name
-        clear_and_recreate_scores(redis_client, sorted_set_name)
+        clear_and_recreate_sortedset(redis_client, SCORES_CHANNEL)
 
     except redis.exceptions.ConnectionError as e:
         print(f"Failed to connect to Redis: {e}")

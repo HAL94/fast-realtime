@@ -17,7 +17,7 @@ Real-Time Updates: Utilize Redis sorted sets for efficient real-time updates and
 Rank Queries: Use Redis commands to query user ranks and leaderboard positions.
 
 TODOS:
-1. Authentication
+1. Authentication [x]
     - User auth. [x]
     - Protect api endpoints with jwt. [x]
     - Protect ws ednpoints with jwt [x]

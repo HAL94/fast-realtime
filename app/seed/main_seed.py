@@ -11,6 +11,8 @@ def seed_everything():
     entries = 10
 
     user_data = user_seeder.seed(num_entries=entries, db=db)
+
+    # dependend on previous seeder
     scores_seeder = ScoresSeeder(data=user_data)
     scores_seeder.seed()
 
