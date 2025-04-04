@@ -2,15 +2,15 @@ from typing import Final
 
 
 ALL_GAMES: Final[str] = "all"
-COD: Final[str] = "call_of_duty"
-VALORANT: Final[str] = "valorant"
-MINECRAFT: Final[str] = "minecraft"
-FORTNITE: Final[str] = "fortnite"
-APEX_LEGENGS: Final[str] = "apex_legends"
-LEAGUE_OF_LEGENDS: Final[str] = "league_of_legends"
-OVERWATCH: Final[str] = "overwatch"
-CS: Final[str] = "counter_strike"
-ROCKET_LEAGUE: Final[str] = "rocket_league"
+COD: Final[str] = "cod"
+VALORANT: Final[str] = "valrnt"
+MINECRAFT: Final[str] = "mcft"
+FORTNITE: Final[str] = "fnite"
+APEX_LEGENGS: Final[str] = "apxleg"
+LEAGUE_OF_LEGENDS: Final[str] = "lol"
+OVERWATCH: Final[str] = "ow"
+CS: Final[str] = "cs"
+ROCKET_LEAGUE: Final[str] = "rl"
 PUBG: Final[str] = "pubg"
 
 channels_dict = {

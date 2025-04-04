@@ -7,34 +7,6 @@ from .utils import generate_leaderboard_data
 
 final_encoding = ""
 
-
-def update_merged_scores(player_id: str, game: str, score: int, client: redis.Redis):
-    key = f"{ALL_GAMES}:{player_id}:{game}"
-
-    client.zadd(ALL_GAMES, mapping={key: score})
-    # merged_mappings = client.hgetall(name=key)
-
-    # print(merged_mappings)
-
-    # encoding = []
-
-    # if "merged" not in merged_mappings:
-    #     merged_mappings["merged"] = ""
-    # else:
-    #     encoding = merged_mappings["merged"].split(",")
-
-    # entry = f"{game}:{score}"
-
-    # if entry not in encoding:
-    #     encoding.append(entry)
-
-    # final_encoding = ",".join(encoding)
-
-    # print(f"final encoding: {final_encoding}")
-
-    # client.hset(name=key, mapping={"merged": final_encoding})
-
-
 class ScoresSeeder(SeederBase):
     name = "Score Seeder"
 
@@ -61,9 +33,6 @@ class ScoresSeeder(SeederBase):
             self.client.hset(
                 name=f"{player_info.get('id')}:{self.channel}", mapping=player_info
             )
-            # update_merged_scores(
-            #     player_id=id, game=self.channel, score=score, client=self.client
-            # )
             
             key = f"{ALL_GAMES}:{id}:{self.channel}"
             self.client.zadd(ALL_GAMES, mapping={key: score})
