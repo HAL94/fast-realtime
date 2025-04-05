@@ -1,12 +1,12 @@
 
 
-from typing import Any
+from typing import Optional
 from pydantic import BaseModel
 
 
 class ZRangeItem(BaseModel):
     key: str
-    score: Any
+    score: Optional[float] = None
     
 class ZRangeItemList(BaseModel):
     result: list[ZRangeItem]
