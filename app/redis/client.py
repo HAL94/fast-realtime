@@ -38,8 +38,13 @@ class BaseRedis(Generic[PydanticModel]):
 
             result = []
             for item in data:
-                key, score = item
-                item_ = ZRangeItem(key=key.decode(), score=score)
+                if isinstance(item, tuple):
+                    key, score = item
+                    item_ = ZRangeItem(key=key.decode(), score=score)
+                else:
+                    key = item.decode()                    
+                    item_ = ZRangeItem(key=key, score=None)
+                    
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -49,7 +54,7 @@ class BaseRedis(Generic[PydanticModel]):
 
     async def zrevrange(
         self, *, key: str, start: int = 0, end: int = -1, withscores: bool = True
-    ):
+    ) -> ZRangeItemList | None:
         try:
             data = await self.client.zrevrange(
                 key, start=start, end=end, withscores=withscores
@@ -57,8 +62,13 @@ class BaseRedis(Generic[PydanticModel]):
 
             result = []
             for item in data:
-                key, score = item
-                item_ = ZRangeItem(key=key, score=score)
+                if isinstance(item, tuple):
+                    key, score = item
+                    item_ = ZRangeItem(key=key.decode(), score=score)
+                else:
+                    key = item.decode()                    
+                    item_ = ZRangeItem(key=key, score=None)
+                    
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -70,6 +80,7 @@ class BaseRedis(Generic[PydanticModel]):
         try:
             item_dict = await self.client.hgetall(name=name)
 
+            # print(f"item_dict: {item_dict}")
             if not item_dict or len(item_dict) == 0:
                 return None
             
@@ -79,3 +90,17 @@ class BaseRedis(Generic[PydanticModel]):
         
         except Exception as e:
             print(f"error occured at func: HGETALL: {e}")
+
+    async def get_keys_by_pattern(self, *, pattern: str = None) -> list[str]:
+        try:
+            matching_keys = []
+            
+            if not pattern:
+                return matching_keys
+            
+            for key in self.client.scan_iter(match=pattern):
+                matching_keys.append(key.decode())
+            
+            return matching_keys
+        except Exception as e:
+            print(f"error occured at fun: GET_KEYS_BY_PATTERN: {e}")

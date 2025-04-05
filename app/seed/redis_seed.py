@@ -5,7 +5,6 @@ from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
 from .utils import generate_leaderboard_data
 
-final_encoding = ""
 
 class ScoresSeeder(SeederBase):
     name = "Score Seeder"
@@ -29,13 +28,14 @@ class ScoresSeeder(SeederBase):
 
     def seed(self):
         for (score, id), player_info in zip(self._scores, self._transformed):
-            self.client.zadd(self.channel, {id: score})
-            self.client.hset(
-                name=f"{player_info.get('id')}:{self.channel}", mapping=player_info
-            )
+            key = f"{id}:{self.channel}"
             
+            self.client.zadd(self.channel, {key: score})
+            self.client.hset(name=key, mapping=player_info)
+
             key = f"{ALL_GAMES}:{id}:{self.channel}"
-            self.client.zadd(ALL_GAMES, mapping={key: score})
+            self.client.zadd(ALL_GAMES, mapping={key: score})            
+            self.client.hset(name=key, mapping=player_info)
 
 
 def clear_and_recreate_sortedset(redis_client: redis.Redis, sorted_set_name: str):

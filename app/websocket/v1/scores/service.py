@@ -1,5 +1,5 @@
 from fastapi import Depends
-from app.redis.channels import ALL_GAMES, FORTNITE
+from app.redis.channels import ALL_GAMES
 from .repository import ScoresRepository, get_scores_repo
 
 
@@ -15,8 +15,7 @@ class ScoreService:
         if not data or not data.result:
             return []
         
-        result = []
-        
+        result = []        
         
         for item in data.result:
             
@@ -34,21 +33,21 @@ class ScoreService:
             
             
         
-    async def get_leaderboard_data(self) -> list[dict]:
+    async def get_leaderboard_data(self, game_channel: str) -> list[dict]:
         data = await self.scores_repo.zrevrange(
-            key=FORTNITE, start=0, end=-1, withscores=True
+            key=game_channel, start=0, end=-1, withscores=True
         )
 
         if not data or not data.result:
             return []
-
+        
         result = []
-        print(f"result: {data.result}")
+        
         for item in data.result:
-            key = item.key + ":" + FORTNITE
-            
+            key = item.key
+                                    
             leaderboard_data = await self.scores_repo.hgetall(name=key)
-
+            
             if leaderboard_data:
                 result.append(leaderboard_data.model_dump())
 
