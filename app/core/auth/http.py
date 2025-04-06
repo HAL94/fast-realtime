@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from fastapi.security import APIKeyCookie, HTTPBearer
 from app.core.auth.base import BaseJwtAuth
@@ -11,14 +11,19 @@ from app.core.logger import logger
 security = HTTPBearer()
 cookie = APIKeyCookie(name='ath')
 
+async def get_token_cookie(request: Request) -> AccessToken:
+    try:
+        return await cookie(request)
+    except Exception as e:
+        raise UnauthorizedException from e
+
 
 async def validate_http_jwt(
     user_repo: UserRepository = Depends(get_user_repo),
     settings: AppSettings = Depends(get_settings),
-    credentials: str = Depends(cookie),
+    credentials: str = Depends(get_token_cookie),
 ):
-    print("reached validate_http_jwt")
-    logger.debug("reached validate_http_jwt")
+    logger.info("reached validate_http_jwt")
     jwt_auth = HttpJwtAuth(
         user_repo=user_repo, settings=settings, credentials=credentials
     )
