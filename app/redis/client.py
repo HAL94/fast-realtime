@@ -28,6 +28,7 @@ class BaseRedis(Generic[PydanticModel]):
     def _model(self) -> PydanticModel:
         return self.__model__
 
+    # Starting with Redis 6.2.0, this command can replace the following commands: ZREVRANGE, ZRANGEBYSCORE, ZREVRANGEBYSCORE, ZRANGEBYLEX and ZREVRANGEBYLEX.
     async def zrange(
         self, *, key: str, start: int = 0, end: int = -1, withscores: bool = True
     ) -> ZRangeItemList:
