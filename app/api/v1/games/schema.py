@@ -1,9 +1,6 @@
+from app.core.common.app_response import ModelCamelized
 
-
-from pydantic import BaseModel
-
-
-class GameChannel(BaseModel):
+class GameChannel(ModelCamelized):
     label: str
     value: str
     
