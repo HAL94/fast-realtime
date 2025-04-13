@@ -15,5 +15,6 @@ dependencies = [
     "redis[asyncio]>=5.2.1",
     "ruff>=0.11.0",
     "sqlalchemy>=2.0.39",
+    "uvicorn>=0.34.0",
     "websockets>=15.0.1",
 ]
