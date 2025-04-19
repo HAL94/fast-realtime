@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
+from app.core.common.app_response import ModelCamelized
+
 
 class PlayerRank(BaseModel):
     rank: int
@@ -13,3 +15,7 @@ class PlayerRank(BaseModel):
     score: int
     date: Optional[str | datetime] = None
 
+class SubmitScore(ModelCamelized):
+    score: int
+    game_channel: str
+    
