@@ -10,7 +10,7 @@ class ModelCamelized(BaseModel):
         populate_by_name=True,
     )
 
-class AppResponse(Generic[T], ModelCamelized):
+class AppResponse(ModelCamelized, Generic[T]):
     success: bool = Field(description="Is operation success", default=True)
     status_code: int = Field(description="status code", default=200)
     message: str = Field(description="Message back to client", default="done")

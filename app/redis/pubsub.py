@@ -26,3 +26,11 @@ class RedisPubsub:
         listener_task = asyncio.create_task(run_task())
 
         return listener_task
+
+    async def unsubscribe(self, channel: str):
+        await self.pubsub.unsubscribe(channel)
+
+    async def close(
+        self,
+    ):
+        await self.pubsub.close()
