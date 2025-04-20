@@ -42,13 +42,10 @@ async def ws_user_score(
         return
 
     try:
-        while True:
-            game = (await websocket.receive_text()).strip('"')
-            print(f"payload: {user_data.id}:{game}")
-            user_score = await scores_service.get_user_score_by_game(game, user_data.id)
-            print(f"got user data: {user_score}")
-            result = user_score.model_dump() if user_score else None
-            await websocket.send_json({"user_rank": result})
+        user_score = await scores_service.get_top_user_score(user_data.id)
+        # print(f"got user data: {user_score}")
+        result = user_score.model_dump() if user_score else None
+        await websocket.send_json({"result": result})
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
     except Exception as e:
@@ -117,7 +114,7 @@ async def ws_get_scores(
         while True:
             payload: dict = await websocket.receive_json()
             print(f"payload for filtering: {payload.get('game')}")
-            result = await score_service.get_leaderboard_data(payload.get("game"))            
+            result = await score_service.get_leaderboard_data(payload.get("game"))
             await websocket.send_json({"result": result})
 
     except AsyncRedis.ConnectionError as e:
