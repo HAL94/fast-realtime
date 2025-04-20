@@ -43,9 +43,9 @@ class BaseRedis(Generic[PydanticModel]):
                     key, score = item
                     item_ = ZRangeItem(key=key.decode(), score=score)
                 else:
-                    key = item.decode()                    
+                    key = item.decode()
                     item_ = ZRangeItem(key=key, score=None)
-                    
+
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -67,9 +67,9 @@ class BaseRedis(Generic[PydanticModel]):
                     key, score = item
                     item_ = ZRangeItem(key=key.decode(), score=score)
                 else:
-                    key = item.decode()                    
+                    key = item.decode()
                     item_ = ZRangeItem(key=key, score=None)
-                    
+
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -84,24 +84,30 @@ class BaseRedis(Generic[PydanticModel]):
             # print(f"item_dict: {item_dict}")
             if not item_dict or len(item_dict) == 0:
                 return None
-            
+
             item_dict = {k.decode(): v.decode() for k, v in item_dict.items()}
 
             return self._model(**item_dict)
-        
+
         except Exception as e:
             print(f"error occured at func: HGETALL: {e}")
+
+    async def zrevrank(self, *, sorted_set_name: str, key: str) -> int:
+        try:
+            return await self.client.zrevrank(name=sorted_set_name, value=key)
+        except Exception as e:
+            print(f"error at func: ZREVRANK: {e}")
 
     async def get_keys_by_pattern(self, *, pattern: str = None) -> list[str]:
         try:
             matching_keys = []
-            
+
             if not pattern:
                 return matching_keys
-            
-            for key in self.client.scan_iter(match=pattern):
+
+            async for key in self.client.scan_iter(match=pattern):
                 matching_keys.append(key.decode())
-            
+
             return matching_keys
         except Exception as e:
             print(f"error occured at fun: GET_KEYS_BY_PATTERN: {e}")
