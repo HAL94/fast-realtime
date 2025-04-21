@@ -1,5 +1,4 @@
 import redis
-from app.core.db.models import User
 from app.redis.channels import ALL_GAMES
 from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
@@ -13,28 +12,30 @@ class ScoresSeeder(SeederBase):
         super().__init__(data=data)
         self.client = create_redis_client()
         self.channel = channel
-        self._transformed = self._transform(data)
-        self._scores = [
-            (entry.get("score"), entry.get("id")) for entry in self._transformed
-        ]
+        self._transformed = self._transform()
 
-    def _transform(self, data: list[User]):
+    def _transform(
+        self,
+    ):
         clear_and_recreate_sortedset(
             redis_client=self.client,
             sorted_set_name=self.channel,
         )
-        leaderboard_data = generate_leaderboard_data(data, self.channel)
+        leaderboard_data = generate_leaderboard_data(self.data, self.channel)
         return leaderboard_data
 
     def seed(self):
-        for (score, id), player_info in zip(self._scores, self._transformed):
-            key = f"{id}:{self.channel}"
-            
+        for entry in self._transformed:
+            user_id = entry.user_id
+            score = entry.score
+            player_info = entry.model_dump()
+            key = f"{user_id}:{self.channel}"
+
             self.client.zadd(self.channel, {key: score})
             self.client.hset(name=key, mapping=player_info)
 
-            key = f"{ALL_GAMES}:{id}:{self.channel}"
-            self.client.zadd(ALL_GAMES, mapping={key: score})            
+            key = f"{ALL_GAMES}:{user_id}:{self.channel}"
+            self.client.zadd(ALL_GAMES, mapping={key: score})
             self.client.hset(name=key, mapping=player_info)
 
 

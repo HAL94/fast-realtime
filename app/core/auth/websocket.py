@@ -1,5 +1,6 @@
 from http.cookies import SimpleCookie
-from fastapi import Depends, WebSocket
+from fastapi import Depends, WebSocket, WebSocketDisconnect
+import jwt
 from app.core.auth.base import BaseJwtAuth
 from app.core.auth.repository import UserRepository, get_user_repo
 from app.core.auth.schema import AccessToken
@@ -23,7 +24,7 @@ async def validate_ws_jwt(
     user_repo: UserRepository = Depends(get_user_repo),
     settings: AppSettings = Depends(get_settings),
 ):
-    jwt_auth = WsJwtAuth(user_repo=user_repo, settings=settings)    
+    jwt_auth = WsJwtAuth(user_repo=user_repo, settings=settings)
     return await jwt_auth.validate_ws_token(websocket=websocket, token=token)
 
 
@@ -38,3 +39,19 @@ class WsJwtAuth(BaseJwtAuth):
         except UnauthorizedException:
             await close_unauthorized_ws(websocket=websocket)
             pass
+
+
+async def revalidate_token(websocket: WebSocket):
+    try:
+        settings = AppSettings()
+        token = get_ws_token(websocket)
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id = payload.get("id")
+        if not user_id:
+            raise UnauthorizedException("Token payload missing user ID")
+
+    except (UnauthorizedException, jwt.ExpiredSignatureError):
+        await close_unauthorized_ws(websocket)
+        raise WebSocketDisconnect
