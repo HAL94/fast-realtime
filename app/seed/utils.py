@@ -6,6 +6,7 @@ from app.core.config import AppSettings
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.db.database import Base
 from app.core.db.models import User
+from app.websocket.v1.scores.schema import PlayerRankAdd
 
 settings = AppSettings()
 URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
@@ -14,9 +15,11 @@ URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
 engine = create_engine(url=URL)
 
 
-def generate_leaderboard_data(players: list[User], game_channel: str):
+def generate_leaderboard_data(
+    players: list[User], game_channel: str
+) -> list[PlayerRankAdd]:
     """Generates random leaderboard data."""
-   
+
     leaderboard = []
 
     for rank, player in enumerate(players):
@@ -26,14 +29,9 @@ def generate_leaderboard_data(players: list[User], game_channel: str):
             "%Y-%m-%d"
         )  # Random dates within the last 30 days.
 
-        entry = {
-            "rank": rank + 1,
-            "id": player.id,
-            "player": player.name,
-            "game": game,
-            "score": score,
-            "date": date,
-        }
+        entry = PlayerRankAdd(
+            user_id=player.id, player=player.name, game=game, score=score, date=date
+        )
 
         leaderboard.append(entry)
 

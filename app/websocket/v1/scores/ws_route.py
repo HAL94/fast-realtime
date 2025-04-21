@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 import redis.asyncio as AsyncRedis
 
 from app.core.auth.schema import UserRead
-from app.core.auth.websocket import validate_ws_jwt
+from app.core.auth.websocket import revalidate_token, validate_ws_jwt
 from app.redis.client import get_redis_client
 
 import logging
@@ -64,28 +64,23 @@ async def ws_submit_score(
 ):
     if not user_data:
         return
-
     try:
         while True:
+            await revalidate_token(websocket)
             data = await websocket.receive_json()
             data = SubmitScore.model_validate(data)
-            print(f"received data from client: {data}")
+            # print(f"received data from client: {data}")
 
             await scores_service.add_user_score(data=data, user_data=user_data)
-
-            # await websocket.send_text("done")
-
             await redis.publish(
                 "score_submission", message=json.dumps(data.model_dump())
             )
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-    finally:
-        await websocket.close()
         await redis.close()
-        logger.info("Websocket connection closed.")
+    except WebSocketDisconnect:
+        await redis.close()
+        logger.info("Websocket connection closed (/add-score).")
 
 
 @router.websocket("/scores")
@@ -105,13 +100,14 @@ async def ws_get_scores(
 
         async def score_submission_listener(data):
             data = json.loads(data)
-            print(f"got the passed score by user: {data}")
+            # print(f"got the passed score by user: {data}")
             result = await score_service.get_leaderboard_data("all")
             await websocket.send_json({"result": result})
 
-        pubsub.listen(score_submission_listener)
+        listener_task = pubsub.listen(score_submission_listener)
 
         while True:
+            await revalidate_token(websocket)
             payload: dict = await websocket.receive_json()
             print(f"payload for filtering: {payload.get('game')}")
             result = await score_service.get_leaderboard_data(payload.get("game"))
@@ -120,7 +116,6 @@ async def ws_get_scores(
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
     except WebSocketDisconnect:
-        print("Websocket Disconnected")
+        logger.info("Websocket Disconnected (/scores)")
         await pubsub.unsubscribe("score_submission")
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        listener_task.cancel()

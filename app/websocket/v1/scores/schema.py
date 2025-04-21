@@ -2,12 +2,12 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from app.core.common.app_response import ModelCamelized
+from app.core.common.app_response import AppBaseModel
 
 
-class PlayerRank(BaseModel):
-    rank: int
-    id: int
+class PlayerRank(AppBaseModel):
+    rank: Optional[int] = -1
+    user_id: int
     player: str
     game: str
     score: int
@@ -15,13 +15,13 @@ class PlayerRank(BaseModel):
 
 
 class PlayerRankAdd(BaseModel):
-    id: int
+    user_id: int
     player: str
     game: str
     score: int
     date: str | datetime
 
 
-class SubmitScore(ModelCamelized):
+class SubmitScore(AppBaseModel):
     score: int
     game_channel: str

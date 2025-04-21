@@ -23,7 +23,6 @@ async def validate_http_jwt(
     settings: AppSettings = Depends(get_settings),
     credentials: str = Depends(get_token_cookie),
 ):
-    logger.info("reached validate_http_jwt")
     jwt_auth = HttpJwtAuth(
         user_repo=user_repo, settings=settings, credentials=credentials
     )
@@ -37,7 +36,6 @@ class HttpJwtAuth(BaseJwtAuth):
         settings: AppSettings,
         credentials: str,
     ):
-        print("reached validate_http_jwt")
         super().__init__(user_repo=user_repo, settings=settings)
         self.credentials = credentials
 

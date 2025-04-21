@@ -18,17 +18,21 @@ Rank Queries: Use Redis commands to query user ranks and leaderboard positions.
 
 TODOS:
 1. Authentication []
-    - User auth. [x]
+    - User should be able to login. [x]
+    - User should be able to signup. []
     - Protect api endpoints with jwt. [x]
-    - Protect ws ednpoints with jwt [x]
+    - Protect ws endpoints with jwt [x]
         - protect getting all scores [x]
-        - protect score submission []
-    - Integrate frontend [x]
+        - protect score submission [x]
+    
+    
 
 2. Score Submission []:
     - Create webscoket endpoint (ws/add-score) which will receive entry for a score for a given game [x]
     - Refetch updated leaderboard upon successful entry [x]
-    - Create a submit form for the score submition. []
+    - Create a submit form for the score submission. []
+        - Provide a `score` field in the form [x]
+        - Provide a `game` field in the form []
 
 
 3. Leaderboard []: 
@@ -36,7 +40,7 @@ TODOS:
         - by all games (all channels) [x]
         - by specific game (specific channel) [x]
     
-    - User Rankings: Users should be able to view their rankings on the leaderboard. []
-        - Users should see their top score in the leaderboard
+    - User Rankings: Users should be able to view their rankings on the leaderboard. [x]
+        - Users should see their top score in the leaderboard [x]
 
-    - Paginate with pageSize and pageNumber
+    - Paginate with pageSize and pageNumber []

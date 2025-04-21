@@ -25,11 +25,13 @@ class ScoreService:
             key = item.key
 
             leaderboard_data = await self.scores_repo.hgetall(name=key)
-
             leaderboard_data.game = channels_dict[leaderboard_data.game]
+            rank = await self.scores_repo.zrevrank(sorted_set_name=game_channel, key=key)            
+            leaderboard_data.rank = rank + 1
+            
 
             if leaderboard_data:
-                result.append(leaderboard_data.model_dump())
+                result.append(leaderboard_data.model_dump(by_alias=True))
 
         return result
 
