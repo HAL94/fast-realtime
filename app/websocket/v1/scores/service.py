@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import Depends
 
 from app.core.auth.schema import UserRead
-from app.websocket.v1.scores.schema import PlayerRank, SubmitScore
+from app.websocket.v1.scores.schema import PlayerRank, PlayerRankAdd, SubmitScore
 from .repository import ScoresRepository, get_scores_repo
 from app.redis.channels import ALL_GAMES, channels_dict
 
@@ -26,12 +26,13 @@ class ScoreService:
 
             leaderboard_data = await self.scores_repo.hgetall(name=key)
             leaderboard_data.game = channels_dict[leaderboard_data.game]
-            rank = await self.scores_repo.zrevrank(sorted_set_name=game_channel, key=key)            
+            rank = await self.scores_repo.zrevrank(
+                sorted_set_name=game_channel, key=key
+            )
             leaderboard_data.rank = rank + 1
-            
 
             if leaderboard_data:
-                result.append(leaderboard_data.model_dump(by_alias=True))
+                result.append(leaderboard_data.model_dump())
 
         return result
 
@@ -50,6 +51,9 @@ class ScoreService:
                 top_user_rank = rank
                 top_rank_key = key
 
+        if not top_rank_key:
+            return None
+
         result: PlayerRank = await self.scores_repo.hgetall(name=top_rank_key)
 
         result.rank = top_user_rank + 1  # ranking is 0-based
@@ -66,21 +70,20 @@ class ScoreService:
 
         key = f"{user_data.id}:{game_channel}"
 
-        entry = {
-            "rank": -1,
-            "id": user_data.id,
-            "player": user_data.name,
-            "game": game_channel,
-            "score": score,
-            "date": datetime.now().strftime("%Y-%m-%d"),
-        }
+        entry = PlayerRankAdd(
+            user_id=user_data.id,
+            player=user_data.name,
+            game=game_channel,
+            score=score,
+            date=datetime.now().strftime("%Y-%m-%d"),
+        )
 
         await self.scores_repo.client.zadd(game_channel, {key: score})
-        await self.scores_repo.client.hset(name=key, mapping=entry)
+        await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
         key = f"{ALL_GAMES}:{user_data.id}:{game_channel}"
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
-        await self.scores_repo.client.hset(name=key, mapping=entry)
+        await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
 
 async def get_score_service(scores_repo: ScoresRepository = Depends(get_scores_repo)):

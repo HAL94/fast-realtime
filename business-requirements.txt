@@ -32,7 +32,7 @@ TODOS:
     - Refetch updated leaderboard upon successful entry [x]
     - Create a submit form for the score submission. []
         - Provide a `score` field in the form [x]
-        - Provide a `game` field in the form []
+        - Provide a `game` field in the form [x]
 
 
 3. Leaderboard []: 

@@ -4,6 +4,7 @@ import redis.asyncio as AsyncRedis
 
 from app.core.auth.schema import UserRead
 from app.core.auth.websocket import revalidate_token, validate_ws_jwt
+from app.core.common.app_response import WsAppResponse
 from app.redis.client import get_redis_client
 
 import logging
@@ -51,7 +52,6 @@ async def ws_user_score(
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
-        await websocket.close()
         logger.info("Websocket connection closed.")
 
 
@@ -67,8 +67,16 @@ async def ws_submit_score(
     try:
         while True:
             await revalidate_token(websocket)
-            data = await websocket.receive_json()
-            data = SubmitScore.model_validate(data)
+            # data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+                data = SubmitScore.model_validate(data)
+            except ValueError as e:
+                logger.info(f"Data validation error: {e}")
+                ws_error = WsAppResponse(error="Invalid Request")
+                await websocket.send_json(ws_error.model_dump())
+                continue
+            
             # print(f"received data from client: {data}")
 
             await scores_service.add_user_score(data=data, user_data=user_data)
