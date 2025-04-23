@@ -27,12 +27,13 @@ TODOS:
     
     
 
-2. Score Submission []:
+2. Score Submission [x]:
     - Create webscoket endpoint (ws/add-score) which will receive entry for a score for a given game [x]
     - Refetch updated leaderboard upon successful entry [x]
-    - Create a submit form for the score submission. []
+    - Create a submit form for the score submission. [x]
         - Provide a `score` field in the form [x]
         - Provide a `game` field in the form [x]
+    - When a user adds a score, update their top score accordingly [x]
 
 
 3. Leaderboard []: 
