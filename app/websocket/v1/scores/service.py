@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from fastapi import Depends
 
 from app.core.auth.schema import UserRead
@@ -10,10 +11,19 @@ from app.redis.channels import ALL_GAMES, channels_dict
 class ScoreService:
     def __init__(self, scores_repo: ScoresRepository):
         self.scores_repo = scores_repo
+        
+    async def get_leaderboard_count(self, game_channel: str = ALL_GAMES):
+        data = await self.scores_repo.zrevrange(key=game_channel, start=0, end=-1)
+        
+        total_count = len(data.result)
+        
+        return total_count
 
-    async def get_leaderboard_data(self, game_channel: str) -> list[dict]:
+    async def get_leaderboard_data(
+        self, game_channel: str, start: Optional[int] = 0, end: Optional[int] = -1
+    ) -> list[dict]:
         data = await self.scores_repo.zrevrange(
-            key=game_channel, start=0, end=-1, withscores=True
+            key=game_channel, start=start, end=end, withscores=True
         )
 
         if not data or not data.result:
