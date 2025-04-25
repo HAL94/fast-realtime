@@ -69,7 +69,7 @@ async def ws_user_score(
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
     except WebSocketDisconnect:
-        pubsub.unsubscribe(f"{USER_SCORE}{user_data.id}")
+        await pubsub.unsubscribe(f"{USER_SCORE}{user_data.id}")
         if listener_task and not listener_task.cancelled():
             listener_task.cancel()
 
