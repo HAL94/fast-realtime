@@ -137,9 +137,16 @@ async def ws_get_scores(
         while True:
             await revalidate_token(websocket)
             payload: dict = await websocket.receive_json()
-            print(f"payload for filtering: {payload.get('game')}")
-            result = await score_service.get_leaderboard_data(payload.get("game"))
-            await websocket.send_json({"result": result})
+            game_channel = payload.get("game")
+            # print(f"payload for filtering: {game_channel}")
+            print(f"pagination params: {payload.get('start')} - {payload.get('end')}")
+            result = await score_service.get_leaderboard_data(
+                game_channel, start=payload.get("start"), end=payload.get("end")
+            )
+            total_count = await score_service.get_leaderboard_count(
+                game_channel=game_channel
+            )
+            await websocket.send_json({"result": result, "totalCount": total_count})
 
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
