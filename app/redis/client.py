@@ -98,6 +98,25 @@ class BaseRedis(Generic[PydanticModel]):
         except Exception as e:
             print(f"error at func: ZREVRANK: {e}")
 
+    async def zunion(self, *, keys: list[str]):
+        return await self.client.zunion(keys, withscores=True)
+
+    async def zunionstore(self, *, keys: list[str], order="desc"):
+        dest_key = "temp_union_result"
+
+        asc_result = await self.client.zunionstore(dest=dest_key, keys=keys)
+
+        if order == "asc":
+            await self.client.delete(dest_key)
+            return asc_result
+
+        desc_result = await self.client.zrange(
+            name=dest_key, start=0, end=-1, desc=True, withscores=True
+        )
+
+        await self.client.delete(dest_key)
+        return desc_result
+
     async def get_keys_by_pattern(self, *, pattern: str = None) -> list[str]:
         try:
             matching_keys = []

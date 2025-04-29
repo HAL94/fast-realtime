@@ -1,9 +1,10 @@
-from datetime import datetime
+import datetime
 from typing import Optional
 from fastapi import Depends
 
 from app.core.auth.schema import UserRead
-from app.websocket.v1.scores.schema import PlayerRank, PlayerRankAdd, SubmitScore
+from app.utils import date_to_timestamp
+from app.websocket.v1.scores.schema import PlayerRank, PlayerRankAdd, ReportRequest, SubmitScore
 from .repository import ScoresRepository, get_scores_repo
 from app.redis.channels import ALL_GAMES, channels_dict
 
@@ -85,7 +86,7 @@ class ScoreService:
             player=user_data.name,
             game=game_channel,
             score=score,
-            date=datetime.now().strftime("%Y-%m-%d"),
+            date=datetime.datetime.now().strftime("%Y-%m-%d"),
         )
 
         await self.scores_repo.client.zadd(game_channel, {key: score})
@@ -95,6 +96,28 @@ class ScoreService:
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
+    async def get_reports(self, data: ReportRequest):
+        start_date = data.start
+        end_date = data.end
+        
+        delta = datetime.timedelta(days=1)
+        PREFIX = "lb"
+        
+        timestamp_keys = []
+        
+        while (start_date <= end_date):
+            timestamp_key = date_to_timestamp(start_date.strftime("%Y-%m-%d"))
+            
+            print(timestamp_key, start_date, end="\n")
+                        
+            start_date += delta
+            
+            timestamp_keys.append(f"{PREFIX}:{timestamp_key}")
+        
+        result = await self.scores_repo.zunionstore(keys=timestamp_keys)    
+        
+        print(f"merged sorted set: {result}")
+        
 
 async def get_score_service(scores_repo: ScoresRepository = Depends(get_scores_repo)):
     return ScoreService(scores_repo)

@@ -2,8 +2,8 @@ import redis
 from app.redis.channels import ALL_GAMES
 from app.seed.base import SeederBase
 from app.seed.utils import create_redis_client
+from app.utils import date_to_timestamp
 from .utils import generate_leaderboard_data
-
 
 class ScoresSeeder(SeederBase):
     name = "Score Seeder"
@@ -37,6 +37,12 @@ class ScoresSeeder(SeederBase):
             key = f"{ALL_GAMES}:{user_id}:{self.channel}"
             self.client.zadd(ALL_GAMES, mapping={key: score})
             self.client.hset(name=key, mapping=player_info)
+            
+            
+            dt_timestamp = date_to_timestamp(entry.date)
+            channel_by_date = f"lb:{dt_timestamp}"
+            
+            self.client.zadd(channel_by_date, { key: score })
 
 
 def clear_and_recreate_sortedset(redis_client: redis.Redis, sorted_set_name: str):

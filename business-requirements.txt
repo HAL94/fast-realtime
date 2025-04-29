@@ -17,9 +17,9 @@ Real-Time Updates: Utilize Redis sorted sets for efficient real-time updates and
 Rank Queries: Use Redis commands to query user ranks and leaderboard positions.
 
 TODOS:
-1. Authentication []
+1. Authentication [x]
     - User should be able to login. [x]
-    - User should be able to signup. []
+    - User should be able to signup. [x]
     - Protect api endpoints with jwt. [x]
     - Protect ws endpoints with jwt [x]
         - protect getting all scores [x]
@@ -27,7 +27,7 @@ TODOS:
     
     
 
-2. Score Submission []:
+2. Score Submission [x]:
     - Create webscoket endpoint (ws/add-score) which will receive entry for a score for a given game [x]
     - Refetch updated leaderboard upon successful entry [x]
     - Create a submit form for the score submission. [x]
@@ -43,4 +43,6 @@ TODOS:
     - User Rankings: Users should be able to view their rankings on the leaderboard. [x]
         - Users should see their top score in the leaderboard [x]
 
-    - Paginate with pageSize and pageNumber []
+    - Paginate with pageSize and pageNumber [x]
+
+    - Generate reports on the top players for a specific period []
