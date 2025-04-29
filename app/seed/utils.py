@@ -15,6 +15,8 @@ URL = f"postgresql://{settings.PG_USER}:{settings.PG_PW}@{settings.PG_SERVER}:{
 engine = create_engine(url=URL)
 
 
+
+
 def generate_leaderboard_data(
     players: list[User], game_channel: str
 ) -> list[PlayerRankAdd]:

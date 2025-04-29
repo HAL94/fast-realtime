@@ -12,7 +12,7 @@ import logging
 
 from app.redis.events import SCORE_SUBMISSION, USER_SCORE
 from app.redis.pubsub import RedisPubsub, get_pubsub
-from app.websocket.v1.scores.schema import SubmitScore
+from app.websocket.v1.scores.schema import ReportRequest, SubmitScore
 from app.websocket.v1.scores.service import ScoreService, get_score_service
 
 logger = logging.getLogger("uvicorn")
@@ -118,14 +118,13 @@ async def ws_get_scores(
     user_data: UserRead | None = Depends(validate_ws_jwt),
     pubsub: RedisPubsub = Depends(get_pubsub),
 ):
-    if not user_data:
+    # if not user_data:
         # gracefylly exit endpoint
-        return
+        # return
 
     await pubsub.subscribe(SCORE_SUBMISSION)
 
     try:
-
         async def score_submission_listener(data):
             data = json.loads(data)
             # print(f"got the passed score by user: {data}")
@@ -139,7 +138,7 @@ async def ws_get_scores(
             payload: dict = await websocket.receive_json()
             game_channel = payload.get("game")
             # print(f"payload for filtering: {game_channel}")
-            print(f"pagination params: {payload.get('start')} - {payload.get('end')}")
+            # print(f"pagination params: {payload.get('start')} - {payload.get('end')}")
             result = await score_service.get_leaderboard_data(
                 game_channel, start=payload.get("start"), end=payload.get("end")
             )
@@ -154,3 +153,32 @@ async def ws_get_scores(
         logger.info("Websocket Disconnected (/scores)")
         await pubsub.unsubscribe(SCORE_SUBMISSION)
         listener_task.cancel()
+
+
+@router.websocket("/reports")
+async def ws_get_report(
+    websocket: WebSocket,
+    score_service: ScoreService = Depends(get_score_service),
+    # user_data: UserRead | None = Depends(validate_ws_jwt),
+):
+    
+    # if not user_data:
+        # return
+        
+    await websocket.accept()
+    try:
+        while True:
+            # await revalidate_token(websocket)
+            try:
+                payload = await websocket.receive_json()
+                payload = ReportRequest.model_validate(payload)
+                
+                await score_service.get_reports(payload)
+            except ValueError:
+                error = WsAppResponse(error="Invalid Request")
+                await websocket.send_json(error.model_dump())
+                continue
+                
+            
+    except WebSocketDisconnect:
+        logger.info("Websocket Disconnected (/reports)")

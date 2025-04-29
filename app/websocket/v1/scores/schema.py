@@ -25,3 +25,7 @@ class PlayerRankAdd(BaseModel):
 class SubmitScore(AppBaseModel):
     score: int
     game_channel: str
+
+class ReportRequest(AppBaseModel):
+    start: datetime
+    end: datetime
