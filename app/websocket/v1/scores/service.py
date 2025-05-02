@@ -50,8 +50,12 @@ class ScoreService:
 
             if leaderboard_data:
                 result.append(leaderboard_data.model_dump())
+        
+        data = await self.scores_repo.zrevrange(key=game_channel, start=0, end=-1)
 
-        return result
+        total_count = len(data.result)
+
+        return result, total_count
 
     async def get_top_user_score(self, user_id: int):
         keys = await self.scores_repo.get_keys_by_pattern(
@@ -86,13 +90,15 @@ class ScoreService:
             return None
 
         key = f"{user_data.id}:{game_channel}"
+        
+        date = datetime.datetime.now()
 
         entry = PlayerRankAdd(
             user_id=user_data.id,
             player=user_data.name,
             game=game_channel,
             score=score,
-            date=datetime.datetime.now().strftime("%Y-%m-%d"),
+            date=date.strftime("%Y-%m-%d"),
         )
 
         await self.scores_repo.client.zadd(game_channel, {key: score})
@@ -101,6 +107,13 @@ class ScoreService:
         key = f"{ALL_GAMES}:{user_data.id}:{game_channel}"
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
+        
+        PREFIX = "lb"
+        dt_timestamp = date_to_timestamp(date.strftime("%Y-%m-%d"))
+        channel_by_date = f"{PREFIX}:{dt_timestamp}"
+        
+        key = f"{user_data.id}:{game_channel}" 
+        await self.scores_repo.client.zadd(channel_by_date, { key: score })
 
     async def get_reports(self, data: ReportRequest) -> list[ReportResponse]:
         start_date = data.start
@@ -129,7 +142,7 @@ class ScoreService:
             key = item.key
             leaderboard_item = await self.scores_repo.hgetall(name=key)
             leaderboard_item.rank = rank + 1
-            pattern = f"{key.split(":")[1]}:*"
+            pattern = f"{key.split(":")[0]}:*"
             
             games_count = await self.scores_repo.get_keys_by_pattern(pattern=pattern)            
             report_item = ReportResponse(name=leaderboard_item.player, score=leaderboard_item.score, games=len(games_count))
