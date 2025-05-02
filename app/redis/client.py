@@ -101,21 +101,30 @@ class BaseRedis(Generic[PydanticModel]):
     async def zunion(self, *, keys: list[str]):
         return await self.client.zunion(keys, withscores=True)
 
-    async def zunionstore(self, *, keys: list[str], order="desc"):
+    async def zunionstore(self, *, keys: list[str], start: int = 0, end: int = -1, desc=True) -> ZRangeItemList | None:
         dest_key = "temp_union_result"
 
-        asc_result = await self.client.zunionstore(dest=dest_key, keys=keys)
+        await self.client.zunionstore(dest=dest_key, keys=keys)
 
-        if order == "asc":
-            await self.client.delete(dest_key)
-            return asc_result
-
-        desc_result = await self.client.zrange(
-            name=dest_key, start=0, end=-1, desc=True, withscores=True
+        data = await self.client.zrange(
+            name=dest_key, start=start, end=end, desc=desc, withscores=True
         )
+        
+        result = []
+        
+        for item in data:
+            if isinstance(item, tuple):
+                key, score = item
+                item_ = ZRangeItem(key=key.decode(), score=score)
+            else:
+                key = item.decode()
+                item_ = ZRangeItem(key=key, score=None)
+
+            result.append(item_)
 
         await self.client.delete(dest_key)
-        return desc_result
+
+        return ZRangeItemList(result=result)
 
     async def get_keys_by_pattern(self, *, pattern: str = None) -> list[str]:
         try:

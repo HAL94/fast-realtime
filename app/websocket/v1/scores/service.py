@@ -4,7 +4,13 @@ from fastapi import Depends
 
 from app.core.auth.schema import UserRead
 from app.utils import date_to_timestamp
-from app.websocket.v1.scores.schema import PlayerRank, PlayerRankAdd, ReportRequest, SubmitScore
+from app.websocket.v1.scores.schema import (
+    PlayerRank,
+    PlayerRankAdd,
+    ReportRequest,
+    ReportResponse,
+    SubmitScore,
+)
 from .repository import ScoresRepository, get_scores_repo
 from app.redis.channels import ALL_GAMES, channels_dict
 
@@ -12,12 +18,12 @@ from app.redis.channels import ALL_GAMES, channels_dict
 class ScoreService:
     def __init__(self, scores_repo: ScoresRepository):
         self.scores_repo = scores_repo
-        
+
     async def get_leaderboard_count(self, game_channel: str = ALL_GAMES):
         data = await self.scores_repo.zrevrange(key=game_channel, start=0, end=-1)
-        
+
         total_count = len(data.result)
-        
+
         return total_count
 
     async def get_leaderboard_data(
@@ -96,28 +102,42 @@ class ScoreService:
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
-    async def get_reports(self, data: ReportRequest):
+    async def get_reports(self, data: ReportRequest) -> list[ReportResponse]:
         start_date = data.start
         end_date = data.end
-        
+
         delta = datetime.timedelta(days=1)
         PREFIX = "lb"
-        
+
         timestamp_keys = []
-        
-        while (start_date <= end_date):
+
+        while start_date <= end_date:
             timestamp_key = date_to_timestamp(start_date.strftime("%Y-%m-%d"))
-            
-            print(timestamp_key, start_date, end="\n")
-                        
             start_date += delta
-            
             timestamp_keys.append(f"{PREFIX}:{timestamp_key}")
-        
-        result = await self.scores_repo.zunionstore(keys=timestamp_keys)    
-        
-        print(f"merged sorted set: {result}")
-        
+
+        top_data = await self.scores_repo.zunionstore(
+            keys=timestamp_keys, end=data.limit - 1
+        )
+
+        if not top_data:
+            return []
+
+        result: list[ReportResponse] = []
+
+        for rank, item in enumerate(top_data.result):
+            key = item.key
+            leaderboard_item = await self.scores_repo.hgetall(name=key)
+            leaderboard_item.rank = rank + 1
+            pattern = f"{key.split(":")[1]}:*"
+            
+            games_count = await self.scores_repo.get_keys_by_pattern(pattern=pattern)            
+            report_item = ReportResponse(name=leaderboard_item.player, score=leaderboard_item.score, games=len(games_count))
+            
+            result.append(report_item.model_dump())
+            
+        return result 
+
 
 async def get_score_service(scores_repo: ScoresRepository = Depends(get_scores_repo)):
     return ScoreService(scores_repo)

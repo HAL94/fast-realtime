@@ -35,7 +35,7 @@ TODOS:
         - Provide a `game` field in the form [x]
 
 
-3. Leaderboard []: 
+3. Leaderboard [x]: 
     - Retrive all scores from scores endpoint [x]:
         - by all games (all channels) [x]
         - by specific game (specific channel) [x]
@@ -45,4 +45,4 @@ TODOS:
 
     - Paginate with pageSize and pageNumber [x]
 
-    - Generate reports on the top players for a specific period []
+    - Generate reports on the top players for a specific period [x]
