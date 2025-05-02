@@ -119,12 +119,13 @@ async def ws_get_scores(
     pubsub: RedisPubsub = Depends(get_pubsub),
 ):
     # if not user_data:
-        # gracefylly exit endpoint
-        # return
+    # gracefylly exit endpoint
+    # return
 
     await pubsub.subscribe(SCORE_SUBMISSION)
 
     try:
+
         async def score_submission_listener(data):
             data = json.loads(data)
             # print(f"got the passed score by user: {data}")
@@ -159,26 +160,26 @@ async def ws_get_scores(
 async def ws_get_report(
     websocket: WebSocket,
     score_service: ScoreService = Depends(get_score_service),
-    # user_data: UserRead | None = Depends(validate_ws_jwt),
+    user_data: UserRead | None = Depends(validate_ws_jwt),
 ):
-    
-    # if not user_data:
-        # return
-        
-    await websocket.accept()
+    if not user_data:
+        return
+
     try:
         while True:
-            # await revalidate_token(websocket)
+            await revalidate_token(websocket)
             try:
                 payload = await websocket.receive_json()
                 payload = ReportRequest.model_validate(payload)
-                
-                await score_service.get_reports(payload)
             except ValueError:
                 error = WsAppResponse(error="Invalid Request")
                 await websocket.send_json(error.model_dump())
                 continue
-                
-            
+
+            result = await score_service.get_reports(payload)
+            await websocket.send_json({"result": result})
+
     except WebSocketDisconnect:
         logger.info("Websocket Disconnected (/reports)")
+    except AsyncRedis.ConnectionError as e:
+        logger.error(f"Redis connection error: {e}")

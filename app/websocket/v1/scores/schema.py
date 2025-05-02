@@ -29,3 +29,9 @@ class SubmitScore(AppBaseModel):
 class ReportRequest(AppBaseModel):
     start: datetime
     end: datetime
+    limit: Optional[int] = None
+    
+class ReportResponse(AppBaseModel):
+    name: str
+    score: int
+    games: int
