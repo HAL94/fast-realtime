@@ -26,12 +26,25 @@ class SubmitScore(AppBaseModel):
     score: int
     game_channel: str
 
+
 class ReportRequest(AppBaseModel):
     start: datetime
     end: datetime
     limit: Optional[int] = None
-    
+
+
 class ReportResponse(AppBaseModel):
     name: str
     score: int
     games: int
+
+
+class GetLeaderboardRequest(AppBaseModel):
+    game: str
+    start: int
+    end: int
+
+
+class GetLeaderboardResponse(AppBaseModel):
+    result: list[PlayerRank]
+    total_count: int

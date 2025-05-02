@@ -27,9 +27,9 @@ def generate_leaderboard_data(
     for rank, player in enumerate(players):
         game = game_channel
         score = random.randint(100, 1000)
-        date = (datetime.now() - timedelta(days=random.randint(0, 30))).strftime(
+        date = (datetime.now() - timedelta(days=random.randint(0, 180))).strftime(
             "%Y-%m-%d"
-        )  # Random dates within the last 30 days.
+        )  # Random dates within the last 180 days.
 
         entry = PlayerRankAdd(
             user_id=player.id, player=player.name, game=game, score=score, date=date

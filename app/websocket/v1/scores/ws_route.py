@@ -12,7 +12,12 @@ import logging
 
 from app.redis.events import SCORE_SUBMISSION, USER_SCORE
 from app.redis.pubsub import RedisPubsub, get_pubsub
-from app.websocket.v1.scores.schema import ReportRequest, SubmitScore
+from app.websocket.v1.scores.schema import (
+    GetLeaderboardRequest,
+    GetLeaderboardResponse,
+    ReportRequest,
+    SubmitScore,
+)
 from app.websocket.v1.scores.service import ScoreService, get_score_service
 
 logger = logging.getLogger("uvicorn")
@@ -118,35 +123,54 @@ async def ws_get_scores(
     user_data: UserRead | None = Depends(validate_ws_jwt),
     pubsub: RedisPubsub = Depends(get_pubsub),
 ):
-    # if not user_data:
-    # gracefylly exit endpoint
-    # return
+    if not user_data:
+        # gracefylly exit endpoint
+        return
 
     await pubsub.subscribe(SCORE_SUBMISSION)
 
     try:
+        payload_cache: GetLeaderboardRequest | None = None
 
         async def score_submission_listener(data):
             data = json.loads(data)
             # print(f"got the passed score by user: {data}")
-            result = await score_service.get_leaderboard_data("all")
-            await websocket.send_json({"result": result})
+            if not payload_cache:
+                channel = "all"
+                start = 0
+                end = -1
+
+            if isinstance(payload_cache, GetLeaderboardRequest):
+                channel = payload_cache.game or "all"
+                start = payload_cache.start or 0
+                end = payload_cache.end or -1
+
+            result, total_count = await score_service.get_leaderboard_data(
+                channel, start=start, end=end
+            )
+
+            result = GetLeaderboardResponse(result=result, total_count=total_count)
+            await websocket.send_json(result.model_dump())
 
         listener_task = pubsub.listen(score_submission_listener)
 
         while True:
             await revalidate_token(websocket)
-            payload: dict = await websocket.receive_json()
-            game_channel = payload.get("game")
-            # print(f"payload for filtering: {game_channel}")
-            # print(f"pagination params: {payload.get('start')} - {payload.get('end')}")
-            result = await score_service.get_leaderboard_data(
-                game_channel, start=payload.get("start"), end=payload.get("end")
+            try:
+                payload = await websocket.receive_json()
+                payload = GetLeaderboardRequest.model_validate(payload)
+            except ValueError:
+                error = WsAppResponse(error="Invalid request for leaderboard")
+                await websocket.send_json(error.model_dump())
+
+            payload_cache = payload
+            game_channel = payload.game
+            result, total_count = await score_service.get_leaderboard_data(
+                game_channel, start=payload.start, end=payload.end
             )
-            total_count = await score_service.get_leaderboard_count(
-                game_channel=game_channel
-            )
-            await websocket.send_json({"result": result, "totalCount": total_count})
+
+            result = GetLeaderboardResponse(result=result, total_count=total_count)
+            await websocket.send_json(result.model_dump())
 
     except AsyncRedis.ConnectionError as e:
         logger.error(f"Redis connection error: {e}")
