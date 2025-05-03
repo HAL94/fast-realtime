@@ -188,6 +188,8 @@ async def ws_get_report(
 ):
     if not user_data:
         return
+    
+    print(f"user_id: {user_data.id}")
 
     try:
         while True:

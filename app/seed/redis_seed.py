@@ -33,15 +33,17 @@ class ScoresSeeder(SeederBase):
 
             self.client.zadd(self.channel, {key: score})
             self.client.hset(name=key, mapping=player_info)
-
+            
+            dt_suffix = entry.date
+            dt_key = f"{key}:{dt_suffix}"
+            
             key = f"{ALL_GAMES}:{user_id}:{self.channel}"
             self.client.zadd(ALL_GAMES, mapping={key: score})
             self.client.hset(name=key, mapping=player_info)
+            self.client.hset(name=dt_key, mapping=player_info)
             
             channel_by_date = f"lb:{entry.date}"
-
-            key = f"{user_id}:{self.channel}"
-            self.client.zadd(channel_by_date, {key: score})
+            self.client.zadd(channel_by_date, {dt_key: score})
 
 
 def clear_and_recreate_sortedset(redis_client: redis.Redis, sorted_set_name: str):

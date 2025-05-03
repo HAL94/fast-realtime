@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import Depends
 
 from app.core.auth.schema import UserRead
+
+# from app.utils import date_to_timestamp
 from app.websocket.v1.scores.schema import (
     PlayerRank,
     PlayerRankAdd,
@@ -82,6 +84,7 @@ class ScoreService:
         return result
 
     async def add_user_score(self, data: SubmitScore, user_data: UserRead):
+        PREFIX = "lb"
         game_channel = data.game_channel
         score = data.score
 
@@ -103,16 +106,16 @@ class ScoreService:
         await self.scores_repo.client.zadd(game_channel, {key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
+        dt_suffix = date.strftime("%Y-%m-%d")
+        dt_key = f"{key}:{dt_suffix}"
+        await self.scores_repo.client.hset(name=dt_key, mapping=entry.model_dump())
+
         key = f"{ALL_GAMES}:{user_data.id}:{game_channel}"
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
-        PREFIX = "lb"
-        dt_key = date.strftime("%Y-%m-%d")
-        channel_by_date = f"{PREFIX}:{dt_key}"
-
-        key = f"{user_data.id}:{game_channel}"
-        await self.scores_repo.client.zadd(channel_by_date, {key: score})
+        channel_by_date = f"{PREFIX}:{dt_suffix}"
+        await self.scores_repo.client.zadd(channel_by_date, {dt_key: score})
 
     async def get_reports(self, data: ReportRequest) -> list[ReportResponse]:
         start_date = data.start
@@ -129,7 +132,7 @@ class ScoreService:
             timestamp_keys.append(f"{PREFIX}:{date_key}")
 
         top_data = await self.scores_repo.zunionstore(
-            keys=timestamp_keys, end=data.limit - 1
+            keys=timestamp_keys, end=data.limit - 1, withscores=True
         )
 
         if not top_data:
@@ -141,13 +144,23 @@ class ScoreService:
             key = item.key
             leaderboard_item = await self.scores_repo.hgetall(name=key)
             leaderboard_item.rank = rank + 1
-            pattern = f"{key.split(':')[0]}:*"
+            leaderboard_item.score = item.score
 
-            games_count = await self.scores_repo.get_keys_by_pattern(pattern=pattern)
+            user_id = key.split(":")[0]
+            pattern = f"{user_id}:*"
+
+            entries = await self.scores_repo.get_keys_by_pattern(pattern=pattern)
+            matches = []
+            for index, entry in enumerate(entries):                    
+                parts = entry.split(":")
+
+                if len(parts) == 2:
+                    matches.append(entry)
+
             report_item = ReportResponse(
                 name=leaderboard_item.player,
                 score=leaderboard_item.score,
-                games=len(games_count),
+                games=len(matches),
                 game=channels_dict[leaderboard_item.game],
                 date=leaderboard_item.date,
             )
