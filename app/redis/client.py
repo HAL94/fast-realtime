@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 from pydantic import BaseModel
 import redis.asyncio as redis
 
@@ -27,6 +27,14 @@ class BaseRedis(Generic[PydanticModel]):
     @property
     def _model(self) -> PydanticModel:
         return self.__model__
+    
+    def _get_zrange_item(self, item: Any):
+        if isinstance(item, tuple):
+            key, score = item
+            return ZRangeItem(key=key.decode(), score=score)
+        else:
+            key = item.decode()
+            return ZRangeItem(key=key, score=None)
 
     # Starting with Redis 6.2.0, this command can replace the following commands: ZREVRANGE, ZRANGEBYSCORE, ZREVRANGEBYSCORE, ZRANGEBYLEX and ZREVRANGEBYLEX.
     async def zrange(
@@ -39,13 +47,7 @@ class BaseRedis(Generic[PydanticModel]):
 
             result = []
             for item in data:
-                if isinstance(item, tuple):
-                    key, score = item
-                    item_ = ZRangeItem(key=key.decode(), score=score)
-                else:
-                    key = item.decode()
-                    item_ = ZRangeItem(key=key, score=None)
-
+                item_ = self._get_zrange_item(item)
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -63,13 +65,7 @@ class BaseRedis(Generic[PydanticModel]):
 
             result = []
             for item in data:
-                if isinstance(item, tuple):
-                    key, score = item
-                    item_ = ZRangeItem(key=key.decode(), score=score)
-                else:
-                    key = item.decode()
-                    item_ = ZRangeItem(key=key, score=None)
-
+                item_ = self._get_zrange_item(item)
                 result.append(item_)
 
             return ZRangeItemList(result=result)
@@ -113,13 +109,7 @@ class BaseRedis(Generic[PydanticModel]):
         result = []
         
         for item in data:
-            if isinstance(item, tuple):
-                key, score = item
-                item_ = ZRangeItem(key=key.decode(), score=score)
-            else:
-                key = item.decode()
-                item_ = ZRangeItem(key=key, score=None)
-
+            item_ = self._get_zrange_item(item)
             result.append(item_)
 
         await self.client.delete(dest_key)

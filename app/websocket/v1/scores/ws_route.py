@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 import redis.asyncio as AsyncRedis
 
@@ -15,7 +15,7 @@ from app.redis.pubsub import RedisPubsub, get_pubsub
 from app.websocket.v1.scores.schema import (
     GetLeaderboardRequest,
     GetLeaderboardResponse,
-    ReportRequest,
+    GetReportRequest,
     SubmitScore,
 )
 from app.websocket.v1.scores.service import ScoreService, get_score_service
@@ -91,7 +91,6 @@ async def ws_submit_score(
     try:
         while True:
             await revalidate_token(websocket)
-            # data = await websocket.receive_json()
             try:
                 data = await websocket.receive_json()
                 data = SubmitScore.model_validate(data)
@@ -132,9 +131,10 @@ async def ws_get_scores(
     try:
         payload_cache: GetLeaderboardRequest | None = None
 
-        async def score_submission_listener(data):
-            data = json.loads(data)
-            # print(f"got the passed score by user: {data}")
+        async def score_submission_listener(_data: Any = None):
+            # For my purposes, `data` is not needed
+            print(f"message from publisher at: {SCORE_SUBMISSION}: {_data}")
+            
             if not payload_cache:
                 channel = "all"
                 start = 0
@@ -188,22 +188,20 @@ async def ws_get_report(
 ):
     if not user_data:
         return
-    
-    print(f"user_id: {user_data.id}")
 
     try:
         while True:
             await revalidate_token(websocket)
             try:
                 payload = await websocket.receive_json()
-                payload = ReportRequest.model_validate(payload)
+                payload = GetReportRequest.model_validate(payload)
             except ValueError:
                 error = WsAppResponse(error="Invalid Request")
                 await websocket.send_json(error.model_dump())
                 continue
 
             result = await score_service.get_reports(payload)
-            await websocket.send_json({"result": result})
+            await websocket.send_json(result.model_dump())
 
     except WebSocketDisconnect:
         logger.info("Websocket Disconnected (/reports)")

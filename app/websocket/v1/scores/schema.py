@@ -27,18 +27,21 @@ class SubmitScore(AppBaseModel):
     game_channel: str
 
 
-class ReportRequest(AppBaseModel):
+class GetReportRequest(AppBaseModel):
     start: datetime
     end: datetime
     limit: Optional[int] = None
 
 
-class ReportResponse(AppBaseModel):
+class ReportItem(AppBaseModel):
     name: str
     score: int
     games: int
     game: str
     date: str
+    
+class ReportResponse(AppBaseModel):
+    result: list[ReportItem]
 
 
 class GetLeaderboardRequest(AppBaseModel):

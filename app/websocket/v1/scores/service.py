@@ -4,11 +4,11 @@ from fastapi import Depends
 
 from app.core.auth.schema import UserRead
 
-# from app.utils import date_to_timestamp
 from app.websocket.v1.scores.schema import (
+    GetReportRequest,
     PlayerRank,
-    PlayerRankAdd,
-    ReportRequest,
+    PlayerRankAdd,    
+    ReportItem,
     ReportResponse,
     SubmitScore,
 )
@@ -58,12 +58,16 @@ class ScoreService:
 
         return result, total_count
 
-    async def get_top_user_score(self, user_id: int):
+    async def _get_player_games(self, user_id: int):
         keys = await self.scores_repo.get_keys_by_pattern(
             pattern=f"{ALL_GAMES}:{user_id}:*"
         )
 
-        top_user_rank = 9999
+        return keys
+
+    async def get_top_user_score(self, user_id: int):
+        keys = await self._get_player_games(user_id)
+        top_user_rank = float("inf")
         top_rank_key = None
         result = None
 
@@ -104,9 +108,12 @@ class ScoreService:
         )
 
         await self.scores_repo.client.zadd(game_channel, {key: score})
+        # update current record with new date or create new
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
+        # store a separate key-value pair for the current date
         dt_suffix = date.strftime("%Y-%m-%d")
+        # extend current key with date suffix. E.g: 1:cod:2025-05-03
         dt_key = f"{key}:{dt_suffix}"
         await self.scores_repo.client.hset(name=dt_key, mapping=entry.model_dump())
 
@@ -114,10 +121,12 @@ class ScoreService:
         await self.scores_repo.client.zadd(ALL_GAMES, mapping={key: score})
         await self.scores_repo.client.hset(name=key, mapping=entry.model_dump())
 
+        # keep a sorted set for this particular date.
+        # Any players who submitted in this date, can have date-specific leaderboard.
         channel_by_date = f"{PREFIX}:{dt_suffix}"
         await self.scores_repo.client.zadd(channel_by_date, {dt_key: score})
 
-    async def get_reports(self, data: ReportRequest) -> list[ReportResponse]:
+    async def get_reports(self, data: GetReportRequest) -> ReportResponse:
         start_date = data.start
         end_date = data.end
 
@@ -138,7 +147,7 @@ class ScoreService:
         if not top_data:
             return []
 
-        result: list[ReportResponse] = []
+        result: list[ReportItem] = []
 
         for rank, item in enumerate(top_data.result):
             key = item.key
@@ -147,27 +156,21 @@ class ScoreService:
             leaderboard_item.score = item.score
 
             user_id = key.split(":")[0]
-            pattern = f"{user_id}:*"
-
-            entries = await self.scores_repo.get_keys_by_pattern(pattern=pattern)
-            matches = []
-            for index, entry in enumerate(entries):                    
-                parts = entry.split(":")
-
-                if len(parts) == 2:
-                    matches.append(entry)
-
-            report_item = ReportResponse(
+            
+            player_games = await self._get_player_games(user_id)
+            
+            report_item = ReportItem(
                 name=leaderboard_item.player,
                 score=leaderboard_item.score,
-                games=len(matches),
+                games=len(player_games),
                 game=channels_dict[leaderboard_item.game],
                 date=leaderboard_item.date,
             )
 
             result.append(report_item.model_dump())
+        
 
-        return result
+        return ReportResponse(result=result)
 
 
 async def get_score_service(scores_repo: ScoresRepository = Depends(get_scores_repo)):
