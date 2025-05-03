@@ -145,7 +145,7 @@ class ScoreService:
             pattern = f"{key.split(":")[0]}:*"
             
             games_count = await self.scores_repo.get_keys_by_pattern(pattern=pattern)            
-            report_item = ReportResponse(name=leaderboard_item.player, score=leaderboard_item.score, games=len(games_count))
+            report_item = ReportResponse(name=leaderboard_item.player, score=leaderboard_item.score, games=len(games_count), game=channels_dict[leaderboard_item.game], date=leaderboard_item.date)
             
             result.append(report_item.model_dump())
             

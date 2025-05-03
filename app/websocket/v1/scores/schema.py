@@ -37,6 +37,8 @@ class ReportResponse(AppBaseModel):
     name: str
     score: int
     games: int
+    game: str
+    date: str
 
 
 class GetLeaderboardRequest(AppBaseModel):
