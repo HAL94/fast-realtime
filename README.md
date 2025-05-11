@@ -79,26 +79,26 @@ Seeding module is located at `app/seed`. Generated users are populated in `Postg
     - random scores in the range (100-1000) for the users previously generated within the last 6 months starting from current month over 10 games (To see which games are available in the system visit `app/redis/channels`)
 
 # API
-- Authentication (/auth):
+- Authentication (`/auth`):
     - POST `/login` Login to the system
         - Request: `{ email: "sample@domain.com", password: "password" }`
-        - Response (200 Success): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
-        - Response (422 Unprocessable Entity)
+        - Response (`200 Success`): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
+        - Response (`422 Unprocessable Entity`)
 
     - GET `/me` Get current logged in user.
-        - Response (200 Success): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
-        - Response (401 Unauthorized)
+        - Response (`200 Success`): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
+        - Response (`401 Unauthorized`)
 
     - POST `/logout` logout endpoint
-        - Response (200 Success): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
+        - Response (`200 Success`): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
     
     - Post `/signup` Signup to the system
         - Request: `{ email: "sample@domain.com", name: "James Brown", password: "password" }`
-        - Response (200 Success): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
+        - Response (`200 Success`): `{ success: true, statusCode: 200, message: ..., data: { id: 1, name: "James Brown", email: "sample@domain.com" }}`
 
-- Games (/games):
+- Games (`/games`):
     - GET `/` Get a list of all games:
-        - Response (200 Success): `{ success: true, statusCode: 200, message: ..., data: [{ label: "Call of Duty", value: "cod"}, ...]}`
+        - Response (`200 Success`): `{ success: true, statusCode: 200, message: ..., data: [{ label: "Call of Duty", value: "cod"}, ...]}`
 
     
 # Websocket Endpoints/Connections
@@ -106,7 +106,7 @@ Seeding module is located at `app/seed`. Generated users are populated in `Postg
     - Response (Text): `Welcome to your websocket server`
 
 - `/my-score` Get the highest score for the current user in the leaderboard in realtime.
-    - Response (JSON): `{"rank": 11, "user_id": 1, "player": "James Brown", "score": 200, "date": "2025-01-01" }
+    - Response (JSON): `{"rank": 11, "user_id": 1, "player": "James Brown", "score": 200, "date": "2025-01-01" }`
 
 - `/add-score` Submit score for a particular game/channel
     - Response (None)
@@ -117,4 +117,4 @@ Seeding module is located at `app/seed`. Generated users are populated in `Postg
 
 - `/reports` Return top `N` players in a particular date range period
     - Request (JSON): `{"start": "ISODate", "end": "ISODate", "limit": 4}`
-    - Response (JSON): `{ "result": [ { "name": "James Brown", "score": 400, "games": 4, "game": "Call of Duty", "date": "2025-03-32"} ]}`
+    - Response (JSON): `{ "result": [ { "name": "James Brown", "score": 400, "games": 4, "game": "Call of Duty", "date": "2025-03-32"}, ... ]}`
